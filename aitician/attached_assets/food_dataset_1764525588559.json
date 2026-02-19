@@ -1,0 +1,491 @@
+{
+  "foods": [
+    {
+      "name": "Spinach",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"unfavourable","pitta":"favourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"favourable","liver_function":"favourable","immunity":"favourable","diabetes":"favourable","skin_hair":"favourable","weight_management":"favourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Methi",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"favourable","pitta":"unfavourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"favourable","liver_function":"neutral","immunity":"favourable","diabetes":"favourable","skin_hair":"favourable","weight_management":"favourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Drumsticks",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"favourable","liver_function":"favourable","immunity":"favourable","diabetes":"neutral","skin_hair":"favourable","weight_management":"favourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Curry leaves",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"favourable","liver_function":"favourable","immunity":"favourable","diabetes":"favourable","skin_hair":"favourable","weight_management":"neutral","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Coriander",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"favourable","pitta":"favourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"favourable","liver_function":"favourable","immunity":"favourable","diabetes":"neutral","skin_hair":"favourable","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Bottle guard",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"favourable","pitta":"favourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"neutral","liver_function":"favourable","immunity":"favourable","diabetes":"favourable","skin_hair":"neutral","weight_management":"favourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Bitter guard",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"unfavourable","pitta":"unfavourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"favourable","liver_function":"favourable","immunity":"favourable","diabetes":"favourable","skin_hair":"favourable","weight_management":"favourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Pumpkin",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"favourable","pitta":"favourable","kapha":"neutral"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"favourable","diabetes":"favourable","skin_hair":"favourable","weight_management":"favourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Potato",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"unfavourable","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Sweet potato",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"favourable","pitta":"favourable","kapha":"neutral"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"favourable","liver_function":"neutral","immunity":"favourable","diabetes":"neutral","skin_hair":"favourable","weight_management":"neutral","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Beet",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"favourable","liver_function":"favourable","immunity":"favourable","diabetes":"neutral","skin_hair":"favourable","weight_management":"neutral","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Radish",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"unfavourable","pitta":"unfavourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"favourable","liver_function":"favourable","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"favourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Carrot",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"favourable","pitta":"favourable","kapha":"neutral"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"favourable","diabetes":"neutral","skin_hair":"favourable","weight_management":"favourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Tomato",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"neutral","pitta":"unfavourable","kapha":"neutral"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"favourable","diabetes":"neutral","skin_hair":"favourable","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Capsicum",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"neutral","pitta":"unfavourable","kapha":"neutral"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"unfavourable","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Brinjal",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"unfavourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Okra",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"neutral"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"favourable","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Cabbage",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"unfavourable","pitta":"neutral","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"favourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Cauliflower",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"unfavourable","pitta":"neutral","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"favourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Peas",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"favourable","diabetes":"neutral","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Corn",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"neutral","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"unfavourable","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Cucumber",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"unfavourable","pitta":"favourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"favourable","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"favourable","weight_management":"favourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Onion",
+      "category": "vegetables",
+      "dosha_effects": {"vata":"neutral","pitta":"unfavourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"neutral","inflammation":"favourable","liver_function":"neutral","immunity":"favourable","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"favourable"}
+    },
+
+    {
+      "name": "Rice",
+      "category": "grains",
+      "dosha_effects": {"vata":"favourable","pitta":"favourable","kapha":"neutral"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"unfavourable","skin_hair":"neutral","weight_management":"neutral","sleep":"favourable","energy":"neutral"}
+    },
+    {
+      "name": "Wheat",
+      "category": "grains",
+      "dosha_effects": {"vata":"neutral","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"unfavourable","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Jowar",
+      "category": "grains",
+      "dosha_effects": {"vata":"favourable","pitta":"favourable","kapha":"neutral"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"favourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Barley",
+      "category": "grains",
+      "dosha_effects": {"vata":"favourable","pitta":"favourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"favourable","skin_hair":"neutral","weight_management":"favourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Quinoa",
+      "category": "grains",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"neutral"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"favourable","diabetes":"favourable","skin_hair":"neutral","weight_management":"favourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Brown rice",
+      "category": "grains",
+      "dosha_effects": {"vata":"neutral","pitta":"favourable","kapha":"neutral"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Bajra",
+      "category": "grains",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"neutral"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"favourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Oats",
+      "category": "grains",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"favourable","skin_hair":"neutral","weight_management":"favourable","sleep":"neutral","energy":"favourable"}
+    },
+
+    {
+      "name": "Moong",
+      "category": "legumes",
+      "dosha_effects": {"vata":"favourable","pitta":"favourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"favourable","skin_hair":"neutral","weight_management":"favourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Masoor",
+      "category": "legumes",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"neutral"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Toor",
+      "category": "legumes",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"neutral"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Chana",
+      "category": "legumes",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"favourable","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Urad",
+      "category": "legumes",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Rajma",
+      "category": "legumes",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"unfavourable","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Soybeans",
+      "category": "legumes",
+      "dosha_effects": {"vata":"neutral","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"favourable"}
+    },
+
+    {
+      "name": "Orange",
+      "category": "fruits",
+      "dosha_effects": {"vata":"favourable","pitta":"unfavourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"favourable","diabetes":"neutral","skin_hair":"favourable","weight_management":"neutral","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Apple",
+      "category": "fruits",
+      "dosha_effects": {"vata":"favourable","pitta":"favourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"favourable","diabetes":"favourable","skin_hair":"neutral","weight_management":"favourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Banana",
+      "category": "fruits",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"unfavourable","skin_hair":"neutral","weight_management":"unfavourable","sleep":"favourable","energy":"favourable"}
+    },
+    {
+      "name": "Papaya",
+      "category": "fruits",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"neutral","liver_function":"favourable","immunity":"favourable","diabetes":"neutral","skin_hair":"favourable","weight_management":"neutral","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Guava",
+      "category": "fruits",
+      "dosha_effects": {"vata":"favourable","pitta":"unfavourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"favourable","diabetes":"neutral","skin_hair":"favourable","weight_management":"neutral","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Mango",
+      "category": "fruits",
+      "dosha_effects": {"vata":"favourable","pitta":"unfavourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"favourable","diabetes":"unfavourable","skin_hair":"favourable","weight_management":"unfavourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Pineapple",
+      "category": "fruits",
+      "dosha_effects": {"vata":"favourable","pitta":"unfavourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"favourable","liver_function":"neutral","immunity":"favourable","diabetes":"neutral","skin_hair":"favourable","weight_management":"neutral","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Watermelon",
+      "category": "fruits",
+      "dosha_effects": {"vata":"neutral","pitta":"favourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Coconut",
+      "category": "fruits",
+      "dosha_effects": {"vata":"favourable","pitta":"favourable","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"favourable","diabetes":"neutral","skin_hair":"favourable","weight_management":"unfavourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Amla",
+      "category": "fruits",
+      "dosha_effects": {"vata":"favourable","pitta":"favourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"favourable","liver_function":"favourable","immunity":"favourable","diabetes":"favourable","skin_hair":"favourable","weight_management":"neutral","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Pomegranate",
+      "category": "fruits",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"favourable","liver_function":"neutral","immunity":"favourable","diabetes":"neutral","skin_hair":"favourable","weight_management":"neutral","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Lemon",
+      "category": "fruits",
+      "dosha_effects": {"vata":"favourable","pitta":"unfavourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"neutral","liver_function":"favourable","immunity":"favourable","diabetes":"neutral","skin_hair":"favourable","weight_management":"favourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Figs",
+      "category": "fruits",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"unfavourable","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"neutral"}
+    },
+
+    {
+      "name": "Cumin",
+      "category": "spices",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"favourable","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Hing",
+      "category": "spices",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Fennel",
+      "category": "spices",
+      "dosha_effects": {"vata":"favourable","pitta":"favourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"favourable","energy":"neutral"}
+    },
+    {
+      "name": "Carom seeds",
+      "category": "spices",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Clove",
+      "category": "spices",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"favourable","liver_function":"neutral","immunity":"favourable","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Black pepper",
+      "category": "spices",
+      "dosha_effects": {"vata":"favourable","pitta":"unfavourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"favourable","liver_function":"neutral","immunity":"favourable","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Turmeric",
+      "category": "spices",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"favourable","liver_function":"favourable","immunity":"favourable","diabetes":"favourable","skin_hair":"favourable","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Ginger",
+      "category": "spices",
+      "dosha_effects": {"vata":"favourable","pitta":"unfavourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"favourable","liver_function":"neutral","immunity":"favourable","diabetes":"favourable","skin_hair":"neutral","weight_management":"favourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Garlic",
+      "category": "spices",
+      "dosha_effects": {"vata":"favourable","pitta":"unfavourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"favourable","liver_function":"neutral","immunity":"favourable","diabetes":"favourable","skin_hair":"neutral","weight_management":"favourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Nutmeg",
+      "category": "spices",
+      "dosha_effects": {"vata":"favourable","pitta":"unfavourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"favourable","energy":"neutral"}
+    },
+    {
+      "name": "Cardamom",
+      "category": "spices",
+      "dosha_effects": {"vata":"favourable","pitta":"favourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"favourable","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Cinnamon",
+      "category": "spices",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"favourable","skin_hair":"neutral","weight_management":"favourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Tulsi",
+      "category": "spices",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"favourable","liver_function":"neutral","immunity":"favourable","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Mustard",
+      "category": "spices",
+      "dosha_effects": {"vata":"favourable","pitta":"unfavourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"favourable","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+
+    {
+      "name": "Soybean oil",
+      "category": "oils",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Groundnut oil",
+      "category": "oils",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Mustard oil",
+      "category": "oils",
+      "dosha_effects": {"vata":"favourable","pitta":"unfavourable","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"favourable","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Sunflower oil",
+      "category": "oils",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Rice bran oil",
+      "category": "oils",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"neutral"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Olive oil",
+      "category": "oils",
+      "dosha_effects": {"vata":"favourable","pitta":"favourable","kapha":"neutral"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"neutral","inflammation":"favourable","liver_function":"neutral","immunity":"neutral","diabetes":"favourable","skin_hair":"favourable","weight_management":"neutral","sleep":"neutral","energy":"neutral"}
+    },
+
+    {
+      "name": "Almonds",
+      "category": "nuts",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"favourable","diabetes":"neutral","skin_hair":"favourable","weight_management":"unfavourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Cashew",
+      "category": "nuts",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Pistachios",
+      "category": "nuts",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Walnut",
+      "category": "nuts",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"favourable","gut_health":"neutral","inflammation":"favourable","liver_function":"neutral","immunity":"favourable","diabetes":"neutral","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"favourable"}
+    },
+    {
+      "name": "Peanuts",
+      "category": "nuts",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"neutral","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"neutral"}
+    },
+
+    {
+      "name": "Milk",
+      "category": "dairy",
+      "dosha_effects": {"vata":"favourable","pitta":"favourable","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"favourable","diabetes":"unfavourable","skin_hair":"favourable","weight_management":"unfavourable","sleep":"favourable","energy":"neutral"}
+    },
+    {
+      "name": "Paneer",
+      "category": "dairy",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"neutral","inflammation":"neutral","liver_function":"neutral","immunity":"neutral","diabetes":"unfavourable","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Curd",
+      "category": "dairy",
+      "dosha_effects": {"vata":"unfavourable","pitta":"unfavourable","kapha":"favourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"neutral","liver_function":"neutral","immunity":"favourable","diabetes":"unfavourable","skin_hair":"neutral","weight_management":"unfavourable","sleep":"neutral","energy":"neutral"}
+    },
+    {
+      "name": "Ghee",
+      "category": "dairy",
+      "dosha_effects": {"vata":"favourable","pitta":"neutral","kapha":"unfavourable"},
+      "health_goal_effects": {"heart_health":"neutral","gut_health":"favourable","inflammation":"favourable","liver_function":"neutral","immunity":"favourable","diabetes":"unfavourable","skin_hair":"favourable","weight_management":"unfavourable","sleep":"favourable","energy":"neutral"}
+    }
+  ]
+}
