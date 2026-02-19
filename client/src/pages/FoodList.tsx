@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { healthGoals, type HealthGoalKey, type TieredFoods, type Food } from "@shared/schema";
+import { healthGoals, type HealthGoalKey, type TieredFoods, type Food, type DoshaAssessment } from "@shared/schema";
 import { 
   Leaf,
   Search,
@@ -18,7 +18,12 @@ import {
   XCircle,
   Sparkles,
   ArrowLeft,
-  Star
+  Star,
+  Coffee,
+  Sun,
+  Moon,
+  Download,
+  X
 } from "lucide-react";
 import Chatbot from "@/components/Chatbot";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -161,6 +166,7 @@ export default function FoodList() {
   const [showMealDialog, setShowMealDialog] = useState(false);
   const [generatingPlan, setGeneratingPlan] = useState(false);
   const [mealPlan, setMealPlan] = useState<any | null>(null);
+  const [selectedDay, setSelectedDay] = useState(1);
   const { toast } = useToast();
   
   const { data: tieredFoods, isLoading } = useQuery<TieredFoods>({
@@ -173,6 +179,10 @@ export default function FoodList() {
       if (!response.ok) throw new Error("Failed to fetch foods");
       return response.json();
     },
+  });
+
+  const { data: assessment } = useQuery<DoshaAssessment>({
+    queryKey: ["/api/dosha-assessment"],
   });
   
   const goalLabel = goalParam ? healthGoals[goalParam] : null;
@@ -200,6 +210,7 @@ export default function FoodList() {
       }
       const data = await resp.json();
       setMealPlan(data);
+      setSelectedDay(1); // Reset to first day when opening
       setShowMealDialog(true);
     } catch (e) {
       console.error(e);
@@ -384,34 +395,187 @@ export default function FoodList() {
 
         {/* Meal plan dialog */}
         <Dialog open={showMealDialog} onOpenChange={setShowMealDialog}>
-          <DialogContent className="sm:max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Generated Meal Plan</DialogTitle>
-              <DialogDescription>A plan using only foods filtered for your profile.</DialogDescription>
-            </DialogHeader>
+          <DialogContent className="sm:max-w-4xl max-h-[90vh] p-0 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 [&>button]:hidden">
+            {/* Header */}
+            <div className="p-6 pb-4 border-b border-green-200/50 dark:border-green-800/50">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                    <Leaf className="w-6 h-6 text-green-700 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <h2 className="font-serif text-2xl font-bold text-green-900 dark:text-green-100">
+                      Your Personalized Meal Plan
+                    </h2>
+                    <p className="text-sm text-green-700/80 dark:text-green-300/80 mt-1">
+                      {assessment 
+                        ? `${assessment.constitutionType === 'single' 
+                            ? assessment.primaryDosha.charAt(0).toUpperCase() + assessment.primaryDosha.slice(1)
+                            : `${assessment.primaryDosha.charAt(0).toUpperCase() + assessment.primaryDosha.slice(1)}-${assessment.secondaryDosha?.charAt(0).toUpperCase() + assessment.secondaryDosha?.slice(1)}`
+                          } • ${goalLabel || 'Balanced Diet'}`
+                        : goalLabel || 'Balanced Diet'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-green-100/50 hover:bg-green-200/50 border-green-300 dark:bg-green-900/30 dark:hover:bg-green-800/30 dark:border-green-700"
+                    onClick={() => {
+                      // Download functionality - could be enhanced to export as PDF/JSON
+                      const dataStr = JSON.stringify(mealPlan, null, 2);
+                      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                      const url = URL.createObjectURL(dataBlob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = 'meal-plan.json';
+                      link.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setShowMealDialog(false)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
 
-            <div className="mt-4 space-y-4 max-h-[60vh] overflow-auto">
-              {mealPlan?.days?.map((d: any) => (
-                <Card key={d.day} className="p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium">Day {d.day}</h4>
-                  </div>
-                  <div className="grid grid-cols-1 gap-2">
-                    {Object.entries(d.meals).map(([mealKey, recipe]: any) => (
-                      <div key={mealKey} className="p-3 rounded border">
-                        <div className="flex items-center justify-between">
-                          <h5 className="font-medium capitalize">{mealKey}</h5>
-                        </div>
-                        <p className="text-sm font-semibold mt-2">{recipe.title}</p>
-                        <p className="text-sm mt-1"><strong>Ingredients:</strong> {recipe.ingredients.join(", ")}</p>
-                        <ol className="list-decimal ml-5 mt-2 text-sm">
-                          {recipe.instructions.map((ins: string, i: number) => <li key={i}>{ins}</li>)}
-                        </ol>
+              {/* Day Navigation */}
+              <div className="flex gap-2 mt-4">
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => {
+                  const dayNum = idx + 1;
+                  const isActive = selectedDay === dayNum;
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => setSelectedDay(dayNum)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                        isActive
+                          ? 'bg-green-500 text-white shadow-md'
+                          : 'bg-green-100/50 text-green-700 hover:bg-green-200/50 dark:bg-green-900/30 dark:text-green-300 dark:hover:bg-green-800/30'
+                      }`}
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Meal Details */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+              {mealPlan?.days?.find((d: any) => d.day === selectedDay) && (() => {
+                const dayData = mealPlan.days.find((d: any) => d.day === selectedDay);
+                const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                const currentDayName = dayNames[selectedDay - 1];
+
+                return (
+                  <div className="bg-white/80 dark:bg-gray-900/80 rounded-xl p-6 shadow-lg border border-green-200/50 dark:border-green-800/50">
+                    {/* Day Header */}
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <span className="text-green-700 dark:text-green-400 font-bold text-lg">
+                          {currentDayName.charAt(0)}
+                        </span>
                       </div>
-                    ))}
+                      <h3 className="font-serif text-xl font-semibold text-green-900 dark:text-green-100">
+                        {currentDayName}
+                      </h3>
+                    </div>
+
+                    {/* Meals */}
+                    <div className="space-y-6">
+                      {/* Breakfast */}
+                      {dayData.meals.breakfast && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <Coffee className="w-5 h-5 text-green-700 dark:text-green-400" />
+                            <h4 className="font-semibold text-green-900 dark:text-green-100">Breakfast</h4>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {dayData.meals.breakfast.ingredients.map((ingredient: string, idx: number) => (
+                              <span
+                                key={idx}
+                                className="px-3 py-1.5 rounded-full text-sm bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200 border border-green-200 dark:border-green-800"
+                              >
+                                {ingredient}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Lunch */}
+                      {dayData.meals.lunch && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <Sun className="w-5 h-5 text-green-700 dark:text-green-400" />
+                            <h4 className="font-semibold text-green-900 dark:text-green-100">Lunch</h4>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {dayData.meals.lunch.ingredients.map((ingredient: string, idx: number) => (
+                              <span
+                                key={idx}
+                                className="px-3 py-1.5 rounded-full text-sm bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200 border border-green-200 dark:border-green-800"
+                              >
+                                {ingredient}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Dinner */}
+                      {dayData.meals.dinner && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <Moon className="w-5 h-5 text-green-700 dark:text-green-400" />
+                            <h4 className="font-semibold text-green-900 dark:text-green-100">Dinner</h4>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {dayData.meals.dinner.ingredients.map((ingredient: string, idx: number) => (
+                              <span
+                                key={idx}
+                                className="px-3 py-1.5 rounded-full text-sm bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200 border border-green-200 dark:border-green-800"
+                              >
+                                {ingredient}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Snacks */}
+                      {dayData.meals.snack && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <Sparkles className="w-5 h-5 text-green-700 dark:text-green-400" />
+                            <h4 className="font-semibold text-green-900 dark:text-green-100">Snacks</h4>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {dayData.meals.snack.ingredients.map((ingredient: string, idx: number) => (
+                              <span
+                                key={idx}
+                                className="px-3 py-1.5 rounded-full text-sm bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200 border border-green-200 dark:border-green-800"
+                              >
+                                {ingredient}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </Card>
-              ))}
+                );
+              })()}
             </div>
           </DialogContent>
         </Dialog>
