@@ -23,8 +23,10 @@ import {
   Activity,
   User,
   Sparkles,
-  CheckCircle
+  CheckCircle,
+  Heart
 } from "lucide-react";
+import { useFavorites } from "@/hooks/useFavorites";
 
 const doshaIcons = {
   vata: Wind,
@@ -35,6 +37,7 @@ const doshaIcons = {
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { user, isLoading: authLoading } = useAuth();
+  const { favorites } = useFavorites();
   
   const { data: profile, isLoading: profileLoading } = useQuery<UserProfile>({
     queryKey: ["/api/profile"],
@@ -294,6 +297,38 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+        
+        {/* Favorites Quick Access */}
+        {favorites.length > 0 && (
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-serif text-xl font-semibold">Your Favorite Foods</h2>
+              <Link href="/foods">
+                <Button variant="outline" size="sm" className="gap-2">
+                  View All
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex flex-wrap gap-2">
+                  {favorites.slice(0, 10).map((fav, idx) => (
+                    <Badge key={idx} variant="secondary" className="gap-1">
+                      <Heart className="w-3 h-3 fill-red-500 text-red-500" />
+                      {fav.name}
+                    </Badge>
+                  ))}
+                  {favorites.length > 10 && (
+                    <Badge variant="outline" className="gap-1">
+                      +{favorites.length - 10} more
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
         
         {/* Dosha Info Cards (if assessed) */}
         {assessment && primaryDosha && (

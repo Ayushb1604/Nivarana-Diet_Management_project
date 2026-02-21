@@ -23,12 +23,20 @@ import {
   Sun,
   Moon,
   Download,
-  X
+  X,
+  Heart,
+  Copy,
+  Printer
 } from "lucide-react";
 import Chatbot from "@/components/Chatbot";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
+import { useFavorites } from "@/hooks/useFavorites";
+import { useDebounce } from "@/hooks/useDebounce";
+import { copyToClipboard } from "@/lib/clipboard";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 const tierInfo = {
@@ -85,41 +93,67 @@ const categories = [
 
 function FoodCard({ food, tier }: { food: Food; tier: keyof typeof tierInfo }) {
   const info = tierInfo[tier];
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const { toast } = useToast();
+  
+  const favorite = isFavorite(food.name, tier);
   
   return (
     <div 
-      className={`p-4 rounded-lg border-2 ${info.color} hover-elevate transition-all duration-200`}
+      className={`p-4 rounded-lg border-2 ${info.color} hover-elevate transition-all duration-200 relative group`}
       data-testid={`food-card-${food.name.toLowerCase().replace(/\s+/g, '-')}`}
     >
       <div className="flex items-start justify-between gap-2">
-        <div>
+        <div className="flex-1">
           <h4 className="font-medium">{food.name}</h4>
           <p className="text-xs text-muted-foreground capitalize">{food.category}</p>
         </div>
-        <Badge variant="secondary" className="text-xs">
-          {food.category}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-xs">
+            {food.category}
+          </Badge>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => toggleFavorite({ name: food.name, category: food.category, tier })}
+                >
+                  <Heart 
+                    className={`h-4 w-4 ${favorite ? 'fill-red-500 text-red-500' : ''}`}
+                  />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {favorite ? "Remove from favorites" : "Add to favorites"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
     </div>
   );
 }
 
-function TierSection({ tier, foods, searchQuery, selectedCategory }: {
+function TierSection({ tier, foods, searchQuery, selectedCategory, debouncedSearch }: {
   tier: keyof typeof tierInfo;
   foods: Food[];
   searchQuery: string;
   selectedCategory: string;
+  debouncedSearch: string;
 }) {
   const info = tierInfo[tier];
   const Icon = info.icon;
   
   const filteredFoods = useMemo(() => {
     return foods.filter(food => {
-      const matchesSearch = food.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = food.name.toLowerCase().includes(debouncedSearch.toLowerCase());
       const matchesCategory = selectedCategory === "all" || food.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [foods, searchQuery, selectedCategory]);
+  }, [foods, debouncedSearch, selectedCategory]);
   
   if (filteredFoods.length === 0 && foods.length > 0) {
     return null; // Hide tier if all foods are filtered out
@@ -160,8 +194,10 @@ export default function FoodList() {
   const goalParam = params.get("goal") as HealthGoalKey | null;
   
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 300);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [activeTab, setActiveTab] = useState("all");
+  const { favorites } = useFavorites();
 
   const [showMealDialog, setShowMealDialog] = useState(false);
   const [generatingPlan, setGeneratingPlan] = useState(false);
@@ -258,6 +294,11 @@ export default function FoodList() {
       </header>
       
       <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* Breadcrumbs */}
+        <div className="mb-4">
+          <Breadcrumbs />
+        </div>
+        
         {/* Title Section */}
         <div className="mb-8">
           <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mb-2">
@@ -323,33 +364,33 @@ export default function FoodList() {
           <TabsContent value="all" className="mt-6">
             {tieredFoods && (
               <>
-                <TierSection tier="tier_1" foods={tieredFoods.tier_1} searchQuery={searchQuery} selectedCategory={selectedCategory} />
-                <TierSection tier="tier_2" foods={tieredFoods.tier_2} searchQuery={searchQuery} selectedCategory={selectedCategory} />
-                <TierSection tier="tier_3" foods={tieredFoods.tier_3} searchQuery={searchQuery} selectedCategory={selectedCategory} />
-                {tieredFoods.tier_4 && <TierSection tier="tier_4" foods={tieredFoods.tier_4} searchQuery={searchQuery} selectedCategory={selectedCategory} />}
-                {tieredFoods.tier_5 && <TierSection tier="tier_5" foods={tieredFoods.tier_5} searchQuery={searchQuery} selectedCategory={selectedCategory} />}
+                <TierSection tier="tier_1" foods={tieredFoods.tier_1} searchQuery={searchQuery} selectedCategory={selectedCategory} debouncedSearch={debouncedSearch} />
+                <TierSection tier="tier_2" foods={tieredFoods.tier_2} searchQuery={searchQuery} selectedCategory={selectedCategory} debouncedSearch={debouncedSearch} />
+                <TierSection tier="tier_3" foods={tieredFoods.tier_3} searchQuery={searchQuery} selectedCategory={selectedCategory} debouncedSearch={debouncedSearch} />
+                {tieredFoods.tier_4 && <TierSection tier="tier_4" foods={tieredFoods.tier_4} searchQuery={searchQuery} selectedCategory={selectedCategory} debouncedSearch={debouncedSearch} />}
+                {tieredFoods.tier_5 && <TierSection tier="tier_5" foods={tieredFoods.tier_5} searchQuery={searchQuery} selectedCategory={selectedCategory} debouncedSearch={debouncedSearch} />}
               </>
             )}
           </TabsContent>
           
           <TabsContent value="tier_1" className="mt-6">
-            {tieredFoods && <TierSection tier="tier_1" foods={tieredFoods.tier_1} searchQuery={searchQuery} selectedCategory={selectedCategory} />}
+            {tieredFoods && <TierSection tier="tier_1" foods={tieredFoods.tier_1} searchQuery={searchQuery} selectedCategory={selectedCategory} debouncedSearch={debouncedSearch} />}
           </TabsContent>
           
           <TabsContent value="tier_2" className="mt-6">
-            {tieredFoods && <TierSection tier="tier_2" foods={tieredFoods.tier_2} searchQuery={searchQuery} selectedCategory={selectedCategory} />}
+            {tieredFoods && <TierSection tier="tier_2" foods={tieredFoods.tier_2} searchQuery={searchQuery} selectedCategory={selectedCategory} debouncedSearch={debouncedSearch} />}
           </TabsContent>
           
           <TabsContent value="tier_3" className="mt-6">
-            {tieredFoods && <TierSection tier="tier_3" foods={tieredFoods.tier_3} searchQuery={searchQuery} selectedCategory={selectedCategory} />}
+            {tieredFoods && <TierSection tier="tier_3" foods={tieredFoods.tier_3} searchQuery={searchQuery} selectedCategory={selectedCategory} debouncedSearch={debouncedSearch} />}
           </TabsContent>
           
           <TabsContent value="tier_4" className="mt-6">
-            {tieredFoods?.tier_4 && <TierSection tier="tier_4" foods={tieredFoods.tier_4} searchQuery={searchQuery} selectedCategory={selectedCategory} />}
+            {tieredFoods?.tier_4 && <TierSection tier="tier_4" foods={tieredFoods.tier_4} searchQuery={searchQuery} selectedCategory={selectedCategory} debouncedSearch={debouncedSearch} />}
           </TabsContent>
           
           <TabsContent value="tier_5" className="mt-6">
-            {tieredFoods?.tier_5 && <TierSection tier="tier_5" foods={tieredFoods.tier_5} searchQuery={searchQuery} selectedCategory={selectedCategory} />}
+            {tieredFoods?.tier_5 && <TierSection tier="tier_5" foods={tieredFoods.tier_5} searchQuery={searchQuery} selectedCategory={selectedCategory} debouncedSearch={debouncedSearch} />}
           </TabsContent>
         </Tabs>
         
@@ -418,6 +459,68 @@ export default function FoodList() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-green-100/50 hover:bg-green-200/50 border-green-300 dark:bg-green-900/30 dark:hover:bg-green-800/30 dark:border-green-700"
+                          onClick={async () => {
+                            const dayData = mealPlan?.days?.find((d: any) => d.day === selectedDay);
+                            if (dayData) {
+                              const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                              const currentDayName = dayNames[selectedDay - 1];
+                              let text = `Meal Plan - ${currentDayName}\n\n`;
+                              
+                              if (dayData.meals.breakfast) {
+                                text += `Breakfast: ${dayData.meals.breakfast.ingredients.join(', ')}\n`;
+                              }
+                              if (dayData.meals.lunch) {
+                                text += `Lunch: ${dayData.meals.lunch.ingredients.join(', ')}\n`;
+                              }
+                              if (dayData.meals.dinner) {
+                                text += `Dinner: ${dayData.meals.dinner.ingredients.join(', ')}\n`;
+                              }
+                              if (dayData.meals.snack) {
+                                text += `Snacks: ${dayData.meals.snack.ingredients.join(', ')}\n`;
+                              }
+                              
+                              await copyToClipboard(
+                                text,
+                                () => toast({ title: "Copied!", description: "Meal plan copied to clipboard" }),
+                                () => toast({ title: "Failed to copy", description: "Please try again", variant: "destructive" })
+                              );
+                            }
+                          }}
+                        >
+                          <Copy className="w-4 h-4 mr-2" />
+                          Copy
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Copy meal plan to clipboard</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-green-100/50 hover:bg-green-200/50 border-green-300 dark:bg-green-900/30 dark:hover:bg-green-800/30 dark:border-green-700"
+                          onClick={() => {
+                            window.print();
+                          }}
+                        >
+                          <Printer className="w-4 h-4 mr-2" />
+                          Print
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Print meal plan</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
                   <Button
                     variant="outline"
                     size="sm"

@@ -9,6 +9,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { doshaQuestions, calculateDoshaPercentages, classifyConstitution } from "@/lib/doshaQuestions";
 import type { QuizResponse } from "@shared/schema";
 import { Leaf, ArrowRight, ArrowLeft, Wind, Flame, Mountain, CheckCircle } from "lucide-react";
+import { Celebration } from "@/components/Celebration";
 
 const answerOptions = [
   { value: 0, label: "Never", description: "This doesn't apply to me at all" },
@@ -38,6 +39,7 @@ export default function DoshaQuiz() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [responses, setResponses] = useState<QuizResponse[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
   
   const question = doshaQuestions[currentQuestion];
   const progress = ((currentQuestion) / doshaQuestions.length) * 100;
@@ -56,11 +58,10 @@ export default function DoshaQuiz() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/dosha-assessment"] });
-      toast({
-        title: "Assessment Complete!",
-        description: "Your dosha profile has been calculated.",
-      });
-      setLocation("/results");
+      setShowCelebration(true);
+      setTimeout(() => {
+        setLocation("/results");
+      }, 3000);
     },
     onError: () => {
       toast({
@@ -124,6 +125,11 @@ export default function DoshaQuiz() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <Celebration 
+        show={showCelebration} 
+        message="Quiz Complete! 🎉"
+        onComplete={() => setShowCelebration(false)}
+      />
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-3xl mx-auto px-4 py-4">
