@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -91,6 +91,11 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                <div className="text-right">
+                  <Link href="/forgot-password">
+                    <a className="text-xs text-primary underline">Forgot password?</a>
+                  </Link>
+                </div>
               </div>
 
               {error && (

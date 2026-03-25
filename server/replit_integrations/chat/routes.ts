@@ -1,6 +1,8 @@
 import type { Express, Request, Response } from "express";
 import OpenAI from "openai";
 import { chatStorage } from "./storage";
+import { db } from "../../db";
+import { nlpMonitor } from "@shared/schema";
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -123,6 +125,14 @@ Strict Guidelines:
 
       // Save assistant message
       await chatStorage.createMessage(conversationId, "assistant", fullResponse);
+      await db.insert(nlpMonitor).values({
+        query: String(content || ""),
+        response: fullResponse,
+        misunderstood: false,
+        retrainMarked: false,
+        detectedDosha: context?.dosha || null,
+        intent: "chat",
+      });
 
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();

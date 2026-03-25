@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,6 +28,7 @@ import {
   Heart
 } from "lucide-react";
 import { useFavorites } from "@/hooks/useFavorites";
+import { downloadMealPlanStyledPdf } from "@/lib/mealPlanPdf";
 
 const doshaIcons = {
   vata: Wind,
@@ -46,6 +48,11 @@ export default function Dashboard() {
   const { data: assessment, isLoading: assessmentLoading } = useQuery<DoshaAssessment>({
     queryKey: ["/api/dosha-assessment"],
   });
+  const { data: latestMealPlan } = useQuery<any>({
+    queryKey: ["/api/mealplans/latest"],
+    retry: false,
+  });
+  const [selectedMealPlanDay, setSelectedMealPlanDay] = useState(1);
   
   const isLoading = authLoading || profileLoading || assessmentLoading;
   
@@ -330,6 +337,79 @@ export default function Dashboard() {
           </div>
         )}
         
+        {/* Dosha Info Cards (if assessed) */}
+        {latestMealPlan?.payload?.days?.length > 0 && (
+          <div className="mt-8">
+            <h2 className="font-serif text-xl font-semibold mb-4">Your Latest Meal Plan</h2>
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <p className="text-muted-foreground">
+                  Your weekly meal plan is ready. You can download it or share feedback.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, idx) => {
+                    const dayNum = idx + 1;
+                    const active = dayNum === selectedMealPlanDay;
+                    return (
+                      <Button
+                        key={day}
+                        size="sm"
+                        variant={active ? "default" : "outline"}
+                        onClick={() => setSelectedMealPlanDay(dayNum)}
+                      >
+                        {day}
+                      </Button>
+                    );
+                  })}
+                </div>
+                {latestMealPlan?.payload?.days?.find((d: any) => d.day === selectedMealPlanDay) && (
+                  <div className="rounded-xl border border-green-200/50 dark:border-green-800/50 bg-green-50/50 dark:bg-green-950/20 p-4">
+                    {(() => {
+                      const dayData = latestMealPlan.payload.days.find((d: any) => d.day === selectedMealPlanDay);
+                      return (
+                        <div className="space-y-4">
+                          {dayData?.meals?.breakfast && (
+                            <div>
+                              <p className="font-medium">Breakfast</p>
+                              <p className="text-sm text-muted-foreground">{dayData.meals.breakfast.ingredients.join(", ")}</p>
+                            </div>
+                          )}
+                          {dayData?.meals?.lunch && (
+                            <div>
+                              <p className="font-medium">Lunch</p>
+                              <p className="text-sm text-muted-foreground">{dayData.meals.lunch.ingredients.join(", ")}</p>
+                            </div>
+                          )}
+                          {dayData?.meals?.dinner && (
+                            <div>
+                              <p className="font-medium">Dinner</p>
+                              <p className="text-sm text-muted-foreground">{dayData.meals.dinner.ingredients.join(", ")}</p>
+                            </div>
+                          )}
+                          {dayData?.meals?.snack && (
+                            <div>
+                              <p className="font-medium">Snacks</p>
+                              <p className="text-sm text-muted-foreground">{dayData.meals.snack.ingredients.join(", ")}</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <Button onClick={() => downloadMealPlanStyledPdf(latestMealPlan.payload)}>
+                    Download Themed PDF
+                  </Button>
+                  <Link href={`/feedback?dietPlanId=${latestMealPlan.id}`}>
+                    <Button variant="outline">Give Feedback</Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Dosha Info Cards (if assessed) */}
         {assessment && primaryDosha && (
           <div className="mt-8">

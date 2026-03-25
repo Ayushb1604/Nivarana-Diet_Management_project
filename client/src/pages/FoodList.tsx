@@ -25,8 +25,7 @@ import {
   Download,
   X,
   Heart,
-  Copy,
-  Printer
+  Copy
 } from "lucide-react";
 import Chatbot from "@/components/Chatbot";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -37,6 +36,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { copyToClipboard } from "@/lib/clipboard";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { downloadMealPlanStyledPdf } from "@/lib/mealPlanPdf";
 
 
 const tierInfo = {
@@ -248,6 +248,12 @@ export default function FoodList() {
       setMealPlan(data);
       setSelectedDay(1); // Reset to first day when opening
       setShowMealDialog(true);
+      if (data?.source === "fallback") {
+        toast({
+          title: "Fallback meal plan used",
+          description: "AI meal generation was unavailable, so the standard workflow generated your plan.",
+        });
+      }
     } catch (e) {
       console.error(e);
       toast({ title: 'Error', description: 'Failed to generate meal plan' });
@@ -452,7 +458,7 @@ export default function FoodList() {
                       {assessment 
                         ? `${assessment.constitutionType === 'single' 
                             ? assessment.primaryDosha.charAt(0).toUpperCase() + assessment.primaryDosha.slice(1)
-                            : `${assessment.primaryDosha.charAt(0).toUpperCase() + assessment.primaryDosha.slice(1)}-${assessment.secondaryDosha?.charAt(0).toUpperCase() + assessment.secondaryDosha?.slice(1)}`
+                            : `${assessment.primaryDosha.charAt(0).toUpperCase() + assessment.primaryDosha.slice(1)}-${assessment.secondaryDosha ? assessment.secondaryDosha.charAt(0).toUpperCase() + assessment.secondaryDosha.slice(1) : ''}`
                           } • ${goalLabel || 'Balanced Diet'}`
                         : goalLabel || 'Balanced Diet'}
                     </p>
@@ -502,43 +508,16 @@ export default function FoodList() {
                     </Tooltip>
                   </TooltipProvider>
                   
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="bg-green-100/50 hover:bg-green-200/50 border-green-300 dark:bg-green-900/30 dark:hover:bg-green-800/30 dark:border-green-700"
-                          onClick={() => {
-                            window.print();
-                          }}
-                        >
-                          <Printer className="w-4 h-4 mr-2" />
-                          Print
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Print meal plan</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  
                   <Button
                     variant="outline"
                     size="sm"
                     className="bg-green-100/50 hover:bg-green-200/50 border-green-300 dark:bg-green-900/30 dark:hover:bg-green-800/30 dark:border-green-700"
                     onClick={() => {
-                      // Download functionality - could be enhanced to export as PDF/JSON
-                      const dataStr = JSON.stringify(mealPlan, null, 2);
-                      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                      const url = URL.createObjectURL(dataBlob);
-                      const link = document.createElement('a');
-                      link.href = url;
-                      link.download = 'meal-plan.json';
-                      link.click();
-                      URL.revokeObjectURL(url);
+                      downloadMealPlanStyledPdf(mealPlan, "Ayurvedic Weekly Meal Plan");
                     }}
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    Download
+                    Download PDF
                   </Button>
                   <Button
                     variant="ghost"

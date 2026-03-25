@@ -9,6 +9,7 @@ import {
   serial,
   text,
   real,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -202,3 +203,121 @@ export const healthGoals = {
 } as const;
 
 export type HealthGoalKey = keyof typeof healthGoals;
+
+export const roles = ["user", "superadmin"] as const;
+export type Role = (typeof roles)[number];
+
+export const feedbacks = pgTable("feedbacks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  dietPlanId: varchar("diet_plan_id"),
+  rating: integer("rating").notNull(), // 1-5
+  comments: text("comments"),
+  suggestions: text("suggestions"),
+  isSuspicious: boolean("is_suspicious").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const dietPlans = pgTable("diet_plans", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  source: varchar("source", { length: 20 }).default("fallback"),
+  payload: jsonb("payload").notNull(),
+  isFlagged: boolean("is_flagged").default(false),
+  overridePayload: jsonb("override_payload"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const auditLogs = pgTable("audit_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  actorId: varchar("actor_id"),
+  actorRole: varchar("actor_role", { length: 20 }).default("system"),
+  action: varchar("action", { length: 120 }).notNull(),
+  targetType: varchar("target_type", { length: 80 }),
+  targetId: varchar("target_id"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const systemConfigs = pgTable("system_configs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: varchar("key", { length: 100 }).notNull().unique(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const systemControls = pgTable("system_controls", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ruleEngineEnabled: boolean("rule_engine_enabled").default(true),
+  mlModelEnabled: boolean("ml_model_enabled").default(true),
+  chatModuleEnabled: boolean("chat_module_enabled").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const ayurvedicFoods = pgTable("ayurvedic_foods", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 200 }).notNull(),
+  category: varchar("category", { length: 80 }).notNull(),
+  doshaEffect: jsonb("dosha_effect").notNull(), // {vata,pitta,kapha}
+  properties: jsonb("properties").notNull(), // {temperature,weight}
+  tags: jsonb("tags").notNull(), // string[]
+  seasonalRules: jsonb("seasonal_rules"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const dynamicRules = pgTable("dynamic_rules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 160 }).notNull(),
+  conditions: jsonb("conditions").notNull(),
+  recommendations: jsonb("recommendations").notNull(),
+  enabled: boolean("enabled").default(true),
+  priority: integer("priority").default(1),
+  weight: real("weight").default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const datasets = pgTable("datasets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 160 }).notNull(),
+  type: varchar("type", { length: 60 }).notNull(), // food | dosha
+  version: integer("version").default(1),
+  schemaValid: boolean("schema_valid").default(false),
+  metadata: jsonb("metadata"),
+  rawData: jsonb("raw_data"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: varchar("title", { length: 200 }).notNull(),
+  message: text("message").notNull(),
+  type: varchar("type", { length: 50 }).default("info"),
+  isRead: boolean("is_read").default(false),
+  status: varchar("status", { length: 20 }).default("queued"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const nlpMonitor = pgTable("nlp_monitor", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id"),
+  query: text("query").notNull(),
+  response: text("response").notNull(),
+  misunderstood: boolean("misunderstood").default(false),
+  retrainMarked: boolean("retrain_marked").default(false),
+  detectedDosha: varchar("detected_dosha", { length: 20 }),
+  intent: varchar("intent", { length: 80 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  tokenHash: varchar("token_hash", { length: 128 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});

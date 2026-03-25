@@ -17,7 +17,13 @@ import HealthGoals from "@/pages/HealthGoals";
 import FoodList from "@/pages/FoodList";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
+import SuperAdmin from "@/pages/SuperAdmin";
+import FeedbackPage from "@/pages/Feedback";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import NotFound from "@/pages/not-found";
+
+const SUPERADMIN_SECRET_PATH = import.meta.env.VITE_SUPERADMIN_SECRET_PATH || "/superadmin-portal-nivarna-7f9d2";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -39,6 +45,9 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
+      <Route path={SUPERADMIN_SECRET_PATH} component={SuperAdmin} />
       {isAuthenticated && !isLoading && (
         <>
           <Route path="/dashboard" component={Dashboard} />
@@ -47,6 +56,7 @@ function Router() {
           <Route path="/results" component={DoshaResults} />
           <Route path="/health-goals" component={HealthGoals} />
           <Route path="/foods" component={FoodList} />
+          <Route path="/feedback" component={FeedbackPage} />
         </>
       )}
       <Route component={NotFound} />
