@@ -791,6 +791,7 @@ export default function Landing() {
                 )}
               </AnimatePresence>
               </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
