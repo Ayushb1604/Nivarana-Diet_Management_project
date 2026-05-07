@@ -7,8 +7,6 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { useAuth } from "@/hooks/useAuth";
 
 import Landing from "@/pages/Landing";
-import Login from "@/pages/Login";
-import Signup from "@/pages/Signup";
 import Dashboard from "@/pages/Dashboard";
 import Onboarding from "@/pages/Onboarding";
 import DoshaQuiz from "@/pages/DoshaQuiz";
@@ -30,8 +28,8 @@ function Router() {
       {isLoading || !isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />
-          <Route path="/login" component={Login} />
-          <Route path="/signup" component={Signup} />
+          <Route path="/login" component={() => { window.location.replace("/?tab=login"); return null; }} />
+          <Route path="/signup" component={() => { window.location.replace("/"); return null; }} />
           <Route path="/forgot-password" component={ForgotPassword} />
           <Route path="/reset-password" component={ResetPassword} />
         </>
