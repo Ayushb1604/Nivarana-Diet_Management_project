@@ -604,16 +604,9 @@ export default function Landing() {
               </div>
               )}
 
-              <div className="overflow-hidden flex-1">
-              <AnimatePresence mode="wait" custom={tabDirection}>
+              <div className="flex-1">
                 {authTab === "login" ? (
-                  <motion.form key="login" onSubmit={handleLogin}
-                    custom={tabDirection}
-                    initial={{ opacity: 0, x: tabDirection * 40 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: tabDirection * -40 }}
-                    transition={{ type: "spring", stiffness: 350, damping: 32 }}
-                    className="px-7 pb-7 space-y-4">
+                  <form onSubmit={handleLogin} className="px-7 pb-7 space-y-4">
                     <div className="space-y-1.5">
                       <label className="text-sm font-medium">Email address</label>
                       <Input type="email" placeholder="you@example.com" value={loginEmail}
@@ -654,15 +647,9 @@ export default function Landing() {
                         Create account
                       </button>
                     </p>
-                  </motion.form>
+                  </form>
                 ) : authTab === "signup" ? (
-                  <motion.form key="signup" onSubmit={handleSignup}
-                    custom={tabDirection}
-                    initial={{ opacity: 0, x: tabDirection * 40 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: tabDirection * -40 }}
-                    transition={{ type: "spring", stiffness: 350, damping: 32 }}
-                    className="px-7 pb-7 space-y-3">
+                  <form onSubmit={handleSignup} className="px-7 pb-7 space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <label className="text-sm font-medium">First name</label>
@@ -739,13 +726,9 @@ export default function Landing() {
                         Sign in
                       </button>
                     </p>
-                  </motion.form>
+                  </form>
                 ) : (
-                  /* ── Forgot Password Panel ── */
-                  <motion.div key="forgot"
-                    initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 40 }}
-                    transition={{ type: "spring", stiffness: 350, damping: 32 }}
-                    className="px-7 py-6 space-y-4">
+                  <div className="px-7 py-6 space-y-4">
                     {forgotSent ? (
                       <div className="text-center py-4 space-y-4">
                         <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
@@ -787,9 +770,8 @@ export default function Landing() {
                         </Button>
                       </form>
                     )}
-                  </motion.div>
+                  </div>
                 )}
-              </AnimatePresence>
               </div>
             </div>
           </div>
