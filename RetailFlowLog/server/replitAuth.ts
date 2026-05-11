@@ -35,6 +35,7 @@ export function getSession() {
     checkPeriod: 86400000, // prune expired entries every 24h
   });
   
+  const isProd = process.env.NODE_ENV === "production";
   return session({
     secret: process.env.SESSION_SECRET || "dev_secret_key",
     store: sessionStore,
@@ -42,9 +43,9 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false, // localhost doesn't support secure cookies
+      secure: isProd, // true in production (HTTPS), false in dev (HTTP localhost)
       maxAge: sessionTtl,
-      sameSite: "lax",
+      sameSite: isProd ? "none" : "lax",
     },
   });
 }
