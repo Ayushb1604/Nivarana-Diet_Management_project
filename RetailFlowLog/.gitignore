@@ -6,6 +6,9 @@ vite.config.ts.*
 *.tar.gz
 android/
 
-# Local env files (do not commit secrets)
+# Environment files — NEVER commit secrets to version control
+.env
 .env.local
+.env.*.local
+server/.env
 server/.env.local

@@ -28,6 +28,7 @@ import {
   TrendingUp,
   HeartPulse,
   RotateCw,
+  ShieldAlert,
 } from "lucide-react";
 
 const doshaIcons = {
@@ -67,10 +68,12 @@ export default function Dashboard() {
 
   const isLoading = authLoading || profileLoading || assessmentLoading;
   const hasBaseline = wellnessCheckins.length > 0;
-  const baselineCheckin = wellnessCheckins[0];
-  const latestCheckin = wellnessCheckins[wellnessCheckins.length - 1];
+  const baselineCheckin = wellnessCheckins.length > 0 ? wellnessCheckins[0] : undefined;
+  const latestCheckin = wellnessCheckins.length > 0 ? wellnessCheckins[wellnessCheckins.length - 1] : undefined;
   const overallDelta =
-    wellnessCheckins.length >= 2 ? latestCheckin.overallScore - baselineCheckin.overallScore : 0;
+    wellnessCheckins.length >= 2 && latestCheckin && baselineCheckin
+      ? latestCheckin.overallScore - baselineCheckin.overallScore
+      : 0;
 
   const needsOnboarding = !profile?.onboardingComplete;
   const needsAssessment = !assessment;
@@ -127,6 +130,20 @@ export default function Dashboard() {
                       {user.firstName?.[0] || user.email?.[0] || "U"}
                     </AvatarFallback>
                   </Avatar>
+                  {(user as any)?.isAdmin && (
+                    <a href="/admin">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-2 hover:bg-primary/10 hover:text-primary transition-colors"
+                        data-testid="button-admin"
+                        title="Admin Panel"
+                      >
+                        <ShieldAlert className="w-4 h-4" />
+                        <span className="hidden sm:inline">Admin</span>
+                      </Button>
+                    </a>
+                  )}
                   <a href="/api/logout">
                     <Button
                       variant="ghost"
@@ -392,9 +409,8 @@ export default function Dashboard() {
 
           {/* Food Recommendations Card */}
           <Card
-            className={`overflow-hidden relative group transition-all duration-300 bg-gray-50/80 dark:bg-gray-900/40 backdrop-blur-md border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-lg ${
-              !assessment ? "opacity-60" : ""
-            }`}
+            className={`overflow-hidden relative group transition-all duration-300 bg-gray-50/80 dark:bg-gray-900/40 backdrop-blur-md border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-lg ${!assessment ? "opacity-60" : ""
+              }`}
           >
             {/* Accent gradient at top */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400/40 via-amber-500 to-amber-400/40 opacity-80" />
@@ -441,6 +457,19 @@ export default function Dashboard() {
                       <ArrowRight className="w-4 h-4 opacity-0 group-hover/btn:opacity-100 group-hover/btn:translate-x-0 -translate-x-2 transition-all duration-300" />
                     </Button>
                   </Link>
+                  <Link href="/meal-plan">
+                    <Button
+                      variant="secondary"
+                      className="w-full gap-3 py-5 text-sm font-semibold bg-white/60 dark:bg-white/5 hover:bg-amber-500/5 border border-gray-200 dark:border-gray-700 hover:border-amber-500/30 transition-all duration-300 justify-start group/btn"
+                      data-testid="button-meal-plan"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                        <Utensils className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <span className="flex-1 text-left">7-Day Meal Plan</span>
+                      <ArrowRight className="w-4 h-4 opacity-0 group-hover/btn:opacity-100 group-hover/btn:translate-x-0 -translate-x-2 transition-all duration-300 text-amber-600" />
+                    </Button>
+                  </Link>
                 </div>
               ) : (
                 <div className="text-center py-8 px-4 bg-white/30 dark:bg-white/5 rounded-2xl border border-dashed border-gray-300 dark:border-gray-600">
@@ -483,21 +512,20 @@ export default function Dashboard() {
                         {!hasBaseline
                           ? "Track how your health improves after following your plan."
                           : wellnessCheckins.length === 1
-                          ? "Baseline saved — re-evaluate after 2-4 weeks of following your plan."
-                          : "Keep tracking your progress to see what's working."}
+                            ? "Baseline saved — re-evaluate after 2-4 weeks of following your plan."
+                            : "Keep tracking your progress to see what's working."}
                       </p>
                     </div>
                   </div>
 
                   {hasBaseline && wellnessCheckins.length >= 2 && (
                     <div
-                      className={`flex items-center gap-3 px-5 py-3 rounded-2xl border ${
-                        overallDelta > 0
+                      className={`flex items-center gap-3 px-5 py-3 rounded-2xl border ${overallDelta > 0
                           ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                           : overallDelta < 0
-                          ? "bg-destructive/10 border-destructive/20 text-destructive"
-                          : "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-muted-foreground"
-                      }`}
+                            ? "bg-destructive/10 border-destructive/20 text-destructive"
+                            : "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-muted-foreground"
+                        }`}
                     >
                       <TrendingUp className="w-5 h-5" />
                       <div>

@@ -26,14 +26,14 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
-  
+
   getProfile(userId: string): Promise<UserProfile | undefined>;
   createProfile(profile: InsertUserProfile): Promise<UserProfile>;
   updateProfile(userId: string, profile: Partial<InsertUserProfile>): Promise<UserProfile | undefined>;
-  
+
   getDoshaAssessment(userId: string): Promise<DoshaAssessment | undefined>;
   createDoshaAssessment(assessment: InsertDoshaAssessment): Promise<DoshaAssessment>;
-  
+
   getHealthGoal(userId: string): Promise<UserHealthGoal | undefined>;
   upsertHealthGoal(goal: InsertUserHealthGoal): Promise<UserHealthGoal>;
 
@@ -50,9 +50,11 @@ export interface IStorage {
 
   getFirstUser(): Promise<User | undefined>;
   getAdminUsers(): Promise<any[]>;
-  getAdminStats(): Promise<{ totalUsers: number; quizCompleted: number; wellnessCheckins: number; totalConversations: number }>;
+  getAdminStats(): Promise<{ totalUsers: number; quizCompleted: number; wellnessCheckins: number; totalConversations: number; mealPlansGenerated: number }>;
   getAdminConversations(): Promise<any[]>;
+  getAdminWellnessCheckins(): Promise<any[]>;
 }
+
 
 export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
@@ -123,7 +125,7 @@ export class DatabaseStorage implements IStorage {
 
   async upsertHealthGoal(goal: InsertUserHealthGoal): Promise<UserHealthGoal> {
     const existing = await this.getHealthGoal(goal.userId);
-    
+
     if (existing) {
       const [updated] = await db
         .update(userHealthGoals)
@@ -132,7 +134,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return updated;
     }
-    
+
     const [newGoal] = await db.insert(userHealthGoals).values(goal).returning();
     return newGoal;
   }
@@ -226,18 +228,20 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getAdminStats(): Promise<{ totalUsers: number; quizCompleted: number; wellnessCheckins: number; totalConversations: number }> {
-    const [[u], [q], [w], [c]] = await Promise.all([
+  async getAdminStats(): Promise<{ totalUsers: number; quizCompleted: number; wellnessCheckins: number; totalConversations: number; mealPlansGenerated: number }> {
+    const [[u], [q], [w], [c], [m]] = await Promise.all([
       db.select({ value: count() }).from(users),
       db.select({ value: count() }).from(doshaAssessments),
       db.select({ value: count() }).from(wellnessCheckins),
       db.select({ value: count() }).from(conversations),
+      db.select({ value: count() }).from(mealPlans),
     ]);
     return {
       totalUsers: Number(u?.value ?? 0),
       quizCompleted: Number(q?.value ?? 0),
       wellnessCheckins: Number(w?.value ?? 0),
       totalConversations: Number(c?.value ?? 0),
+      mealPlansGenerated: Number(m?.value ?? 0),
     };
   }
 
@@ -249,6 +253,20 @@ export class DatabaseStorage implements IStorage {
         db.select({ email: users.email, firstName: users.firstName }).from(users).where(eq(users.id, c.userId)),
       ]);
       return { ...c, messages: msgs, userEmail: userRows[0]?.email, userName: userRows[0]?.firstName };
+    }));
+  }
+  async getAdminWellnessCheckins(): Promise<any[]> {
+    const allCheckins = await db.select().from(wellnessCheckins).orderBy(asc(wellnessCheckins.createdAt));
+    return Promise.all(allCheckins.map(async (c) => {
+      const userRows = await db
+        .select({ email: users.email, firstName: users.firstName, lastName: users.lastName })
+        .from(users).where(eq(users.id, c.userId));
+      const u = userRows[0];
+      return {
+        ...c,
+        userEmail: u?.email ?? null,
+        userName: u ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() : null,
+      };
     }));
   }
 }

@@ -14,6 +14,7 @@ import {
   Maximize2,
   Minimize2,
   GripHorizontal,
+  Trash2,
 } from "lucide-react";
 import { type TieredFoods } from "@shared/schema";
 
@@ -55,9 +56,10 @@ export default function Chatbot({ dosha, goal, foods }: ChatbotProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: `Namaste! I am your Ayurvedic Dietician. I see you have a ${dosha} constitution and are focusing on ${goal}. How can I help you with your meal planning today?`,
+      content: `Namaste! 🌿 I am Vaidya, your personal Ayurvedic guide. I see you have a ${dosha} constitution and are focusing on ${goal}. How can I help you on your wellness journey today?`,
     },
   ]);
+
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<number | null>(null);
@@ -130,12 +132,27 @@ export default function Chatbot({ dosha, goal, foods }: ChatbotProps) {
 
   const toggleMaximize = () => setIsMaximized((m) => !m);
 
+  // Reset the conversation to the initial welcome state
+  const clearChat = () => {
+    setMessages([
+      {
+        role: "assistant",
+        content: `Namaste! 🌿 I am Vaidya, your personal Ayurvedic guide. I see you have a ${dosha} constitution and are focusing on ${goal}. How can I help you on your wellness journey today?`,
+      },
+    ]);
+    setInput("");
+    setConversationId(null);
+  };
+
+
+  // Quick-reply chips — includes dosha-specific Ayurvedic questions
   const quickQuestions = [
-    { label: "Daily meal plan", icon: Utensils },
-    { label: "Best spices for me", icon: Sparkles },
-    { label: "Breakfast ideas", icon: Zap },
-    { label: "Foods to avoid", icon: AlertTriangle },
+    { label: "What should I eat for dinner?", icon: Utensils, color: "hover:bg-amber-500/10 hover:text-amber-700 hover:border-amber-400/40" },
+    { label: `How to balance ${dosha}?`, icon: Sparkles, color: "hover:bg-primary/10 hover:text-primary hover:border-primary/40" },
+    { label: "Best morning foods for me", icon: Zap, color: "hover:bg-emerald-500/10 hover:text-emerald-700 hover:border-emerald-400/40" },
+    { label: "Foods to avoid for my dosha", icon: AlertTriangle, color: "hover:bg-rose-500/10 hover:text-rose-700 hover:border-rose-400/40" },
   ];
+
 
   const handleSend = async (text: string = input) => {
     if (!text.trim() || isLoading) return;
@@ -255,18 +272,20 @@ export default function Chatbot({ dosha, goal, foods }: ChatbotProps) {
             exit={{ scale: 0, opacity: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 20 }}
           >
-            <Button
+          <Button
               onClick={() => setIsOpen(true)}
               size="lg"
               className="rounded-full h-16 w-16 shadow-2xl shadow-primary/30 hover:shadow-primary/50 hover:scale-110 transition-all bg-gradient-to-br from-primary to-primary/80 relative group"
               data-testid="button-open-chatbot"
             >
-              <MessageCircle className="h-7 w-7" />
+              {/* Herb emoji avatar */}
+              <span className="text-2xl leading-none" aria-hidden>🌿</span>
               <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full ring-2 ring-background animate-pulse" />
               <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-lg bg-foreground text-background text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                Ask your dietician
+                Ask Vaidya
               </span>
             </Button>
+
           </motion.div>
         ) : (
           <motion.div
@@ -311,21 +330,33 @@ export default function Chatbot({ dosha, goal, foods }: ChatbotProps) {
             {/* Header — gradient with avatar */}
             <div className="relative px-5 py-4 bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground flex items-center justify-between gap-3 shrink-0">
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)] pointer-events-none" />
-              <div className="flex items-center gap-3 relative z-10 min-w-0">
-                <div className="w-10 h-10 rounded-2xl bg-primary-foreground/15 backdrop-blur-md flex items-center justify-center shrink-0 ring-1 ring-primary-foreground/20">
-                  <Leaf className="w-5 h-5" />
-                </div>
-                <div className="min-w-0">
-                  <div className="font-serif text-base font-semibold leading-tight truncate">
-                    Ayurvedic Dietician
+                <div className="flex items-center gap-3 relative z-10 min-w-0">
+                  {/* Vaidya avatar — herb emoji in rounded frame */}
+                  <div className="w-10 h-10 rounded-2xl bg-primary-foreground/15 backdrop-blur-md flex items-center justify-center shrink-0 ring-1 ring-primary-foreground/20 text-xl leading-none">
+                    🌿
                   </div>
-                  <div className="text-xs text-primary-foreground/80 flex items-center gap-1.5 mt-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                    <span className="capitalize truncate">{dosha} • {goal}</span>
+                  <div className="min-w-0">
+                    <div className="font-serif text-base font-semibold leading-tight truncate">
+                      Vaidya
+                    </div>
+                    <div className="text-xs text-primary-foreground/80 flex items-center gap-1.5 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                      <span className="capitalize truncate">{dosha} • {goal}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+
               <div className="flex items-center gap-1 relative z-10 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/15 rounded-xl"
+                  onClick={clearChat}
+                  data-testid="button-clear-chat"
+                  title="Clear conversation"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -410,13 +441,14 @@ export default function Chatbot({ dosha, goal, foods }: ChatbotProps) {
                     <button
                       key={q.label}
                       onClick={() => handleSend(q.label)}
-                      className="text-xs font-medium px-3 py-1.5 rounded-full bg-muted/60 hover:bg-primary/10 hover:text-primary border border-border/40 hover:border-primary/40 transition-all flex items-center gap-1.5"
+                      className={`text-xs font-medium px-3 py-1.5 rounded-full bg-muted/60 border border-border/40 transition-all flex items-center gap-1.5 ${q.color}`}
                       data-testid={`quick-question-${q.label}`}
                     >
                       <q.icon className="w-3 h-3" />
                       {q.label}
                     </button>
                   ))}
+
                 </div>
               </div>
             )}

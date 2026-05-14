@@ -1,5 +1,5 @@
 import session from "express-session";
-import type { Express, RequestHandler } from "express";
+import type { Express, RequestHandler, Request, Response, NextFunction } from "express";
 import connectPg from "connect-pg-simple";
 import memorystore from "memorystore";
 import crypto from "node:crypto";
@@ -8,9 +8,51 @@ import { storage } from "./storage";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
+// ─── Simple In-Memory Rate Limiter ───────────────────────────────────────────
+// Prevents brute-force login attacks and forgot-password email spam.
+interface RateLimitEntry { count: number; resetAt: number; }
+const rateLimitStore = new Map<string, RateLimitEntry>();
+
+export function rateLimit(maxRequests: number, windowMs: number) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0].trim() || req.socket.remoteAddress || "unknown";
+    const key = `${req.path}::${ip}`;
+    const now = Date.now();
+    const entry = rateLimitStore.get(key);
+
+    if (!entry || now > entry.resetAt) {
+      rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+    if (entry.count >= maxRequests) {
+      const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
+      res.set("Retry-After", String(retryAfter));
+      return res.status(429).json({
+        message: `Too many attempts. Please try again in ${retryAfter} seconds.`,
+      });
+    }
+    entry.count++;
+    next();
+  };
+}
+// Prune stale entries every 30 minutes to prevent memory leaks
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitStore) {
+    if (now > entry.resetAt) rateLimitStore.delete(key);
+  }
+}, 30 * 60 * 1000);
+// ─────────────────────────────────────────────────────────────────────────────
+
 function normalizeEmail(input: unknown): string {
   if (typeof input !== "string") return "";
   return input.trim().toLowerCase();
+}
+
+/** Strip sensitive credential fields before sending a user object to the client. */
+function sanitizeUser(user: Record<string, any>): Record<string, any> {
+  const { passwordHash: _h, passwordSalt: _s, ...safe } = user;
+  return safe;
 }
 
 function hashPassword(password: string, saltBase64: string): string {
@@ -28,16 +70,33 @@ function verifyPassword(password: string, saltBase64: string, expectedHashBase64
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  
+
+  // AUTH-02 fix: Hard-fail at startup if SESSION_SECRET is missing in production.
+  // A missing secret would cause all sessions to be signed with a well-known
+  // fallback string, making session cookies trivially forgeable.
+  const isProd = process.env.NODE_ENV === "production";
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    if (isProd) {
+      throw new Error(
+        "[FATAL] SESSION_SECRET environment variable is required in production. " +
+        "Set it in your deployment platform's environment variable panel."
+      );
+    }
+    console.warn(
+      "[WARN] SESSION_SECRET is not set. Using an insecure default — " +
+      "this is only acceptable during local development."
+    );
+  }
+
   // Use in-memory store (no database dependency)
   const MemoryStore = memorystore(session);
   const sessionStore = new MemoryStore({
     checkPeriod: 86400000, // prune expired entries every 24h
   });
-  
-  const isProd = process.env.NODE_ENV === "production";
+
   return session({
-    secret: process.env.SESSION_SECRET || "dev_secret_key",
+    secret: secret || "dev_secret_key_not_for_production",
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
@@ -54,8 +113,8 @@ export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
 
-  // Password signup endpoint
-  app.post("/api/signup", async (req, res) => {
+  // Password signup endpoint (rate-limited: 10 per IP per 15 min)
+  app.post("/api/signup", rateLimit(10, 15 * 60 * 1000), async (req, res) => {
     try {
       const email = normalizeEmail(req.body?.email);
       const password = typeof req.body?.password === "string" ? req.body.password : "";
@@ -87,10 +146,10 @@ export async function setupAuth(app: Express) {
       });
 
       (req.session as any).userId = user.id;
-      (req.session as any).user = user;
+      (req.session as any).user = sanitizeUser(user);
       req.session?.save((err) => {
         if (err) return res.status(500).json({ message: "Session save failed" });
-        res.json({ success: true, user });
+        res.json({ success: true, user: sanitizeUser(user) });
       });
     } catch (error) {
       console.error("Signup error:", error);
@@ -98,8 +157,8 @@ export async function setupAuth(app: Express) {
     }
   });
 
-  // Password login endpoint
-  app.post("/api/login/password", async (req, res) => {
+  // Password login endpoint (rate-limited: 10 per IP per 15 min)
+  app.post("/api/login/password", rateLimit(10, 15 * 60 * 1000), async (req, res) => {
     try {
       const email = normalizeEmail(req.body?.email);
       const password = typeof req.body?.password === "string" ? req.body.password : "";
@@ -117,10 +176,10 @@ export async function setupAuth(app: Express) {
       }
 
       (req.session as any).userId = user.id;
-      (req.session as any).user = user;
+      (req.session as any).user = sanitizeUser(user);
       req.session?.save((err) => {
         if (err) return res.status(500).json({ message: "Session save failed" });
-        res.json({ success: true, user });
+        res.json({ success: true, user: sanitizeUser(user) });
       });
     } catch (error) {
       console.error("Password login error:", error);
@@ -128,40 +187,10 @@ export async function setupAuth(app: Express) {
     }
   });
 
-  // Simple login endpoint - just email-based
-  app.post("/api/login", async (req, res) => {
-    try {
-      const { email, firstName = "User", lastName = "" } = req.body;
-      const normalizedEmail = normalizeEmail(email);
-
-      if (!normalizedEmail) {
-        return res.status(400).json({ message: "Email is required" });
-      }
-
-      // Create or get user
-      const user = await storage.upsertUser({
-        id: normalizedEmail, // Use email as ID for simplicity
-        email: normalizedEmail,
-        firstName,
-        lastName,
-        profileImageUrl: null,
-      });
-
-      // Set user in session
-      (req.session as any).userId = user.id;
-      (req.session as any).user = user;
-
-      req.session?.save((err) => {
-        if (err) {
-          return res.status(500).json({ message: "Session save failed" });
-        }
-        res.json({ success: true, user });
-      });
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ message: "Login failed" });
-    }
-  });
+  // AUTH-01 fix: The unauthenticated magic-email login endpoint has been REMOVED.
+  // It allowed any caller to authenticate as any user by supplying only an email
+  // address — with no password check. Use /api/login/password for credential-based
+  // login, or /api/signup for new account creation.
 
   // Logout endpoint
   app.get("/api/logout", (req, res) => {
@@ -173,8 +202,8 @@ export async function setupAuth(app: Express) {
     });
   });
 
-  // Forgot password — generate token and send email
-  app.post("/api/forgot-password", async (req, res) => {
+  // Forgot password — generate token and send email (rate-limited: 3 per IP per 15 min)
+  app.post("/api/forgot-password", rateLimit(3, 15 * 60 * 1000), async (req, res) => {
     try {
       await storage.deleteExpiredTokens();
       const email = normalizeEmail(req.body?.email);
@@ -217,8 +246,8 @@ export async function setupAuth(app: Express) {
     }
   });
 
-  // Reset password — validate token and update password
-  app.post("/api/reset-password", async (req, res) => {
+  // Reset password — validate token and update password (rate-limited: 5 per IP per 15 min)
+  app.post("/api/reset-password", rateLimit(5, 15 * 60 * 1000), async (req, res) => {
     try {
       const { token, password } = req.body ?? {};
       if (!token || typeof token !== "string") return res.status(400).json({ message: "Invalid token" });
@@ -260,7 +289,7 @@ export async function setupAuth(app: Express) {
       }
 
       const isAdmin = await checkIsAdmin(user.email ?? "");
-      res.json({ ...user, isAdmin });
+      res.json({ ...sanitizeUser(user), isAdmin });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });

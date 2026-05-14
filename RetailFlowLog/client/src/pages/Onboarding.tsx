@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,8 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { calculateBMI, getBMICategory, calculateMaintenanceCalories, activityLevels } from "@/lib/healthCalculations";
-import { Leaf, ArrowRight, ArrowLeft, Scale, Ruler, User, Activity, CheckCircle } from "lucide-react";
+import { Leaf, ArrowRight, ArrowLeft, Scale, Ruler, User, Activity, CheckCircle, RefreshCw } from "lucide-react";
+import type { UserProfile } from "@shared/schema";
 
 interface ProfileData {
   age: number;
@@ -28,6 +29,9 @@ export default function Onboarding() {
   
   const [step, setStep] = useState(1);
   const totalSteps = 3;
+
+  // Fetch existing profile to pre-fill fields
+  const { data: existingProfile } = useQuery<UserProfile>({ queryKey: ["/api/profile"] });
   
   const [profileData, setProfileData] = useState<ProfileData>({
     age: 0,
@@ -36,6 +40,19 @@ export default function Onboarding() {
     weightKg: 0,
     activityLevel: "moderate",
   });
+
+  // Pre-fill when existing profile loads
+  useEffect(() => {
+    if (existingProfile && existingProfile.onboardingComplete) {
+      setProfileData({
+        age: existingProfile.age ?? 0,
+        gender: (existingProfile.gender as "male" | "female") ?? "male",
+        heightCm: existingProfile.heightCm ?? 0,
+        weightKg: existingProfile.weightKg ?? 0,
+        activityLevel: existingProfile.activityLevel ?? "moderate",
+      });
+    }
+  }, [existingProfile]);
   
   const bmi = profileData.heightCm > 0 && profileData.weightKg > 0 
     ? calculateBMI(profileData.weightKg, profileData.heightCm)

@@ -1,7 +1,7 @@
 import type { Food, TieredFoods, HealthGoalKey } from "@shared/schema";
 import foodData from "./data/food_dataset.json";
 
-const foods: Food[] = foodData.foods;
+const foods: Food[] = foodData.foods as unknown as Food[];
 
 export function filterBalancedDietSingleDosha(primaryDosha: 'vata' | 'pitta' | 'kapha'): TieredFoods {
   const tier_1: Food[] = [];

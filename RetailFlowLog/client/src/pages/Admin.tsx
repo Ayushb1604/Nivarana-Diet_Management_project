@@ -9,12 +9,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Users, MessageSquare, Leaf, BarChart3,
   ChevronDown, ChevronUp, Trash2, Plus,
-  ArrowLeft, Search, ShieldAlert,
+  ArrowLeft, Search, ShieldAlert, CheckCircle, XCircle,
+  Download, Star, Activity,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { healthGoals } from "@shared/schema";
 
-type Tab = "stats" | "users" | "conversations" | "foods";
+type Tab = "stats" | "users" | "feedback" | "conversations" | "foods";
+
 
 // ── Stat card ──────────────────────────────────────────────────────────────
 function StatCard({ label, value, icon: Icon, color }: {
@@ -54,6 +56,7 @@ function StatsTab() {
 // ── Users tab ──────────────────────────────────────────────────────────────
 function UsersTab() {
   const [search, setSearch] = useState("");
+  const [exporting, setExporting] = useState(false);
   const { data: users = [], isLoading } = useQuery<any[]>({ queryKey: ["/api/admin/users"] });
 
   const filtered = users.filter(u =>
@@ -62,11 +65,41 @@ function UsersTab() {
     `${u.firstName ?? ""} ${u.lastName ?? ""}`.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Use fetch so session cookie is included — window.open doesn't send credentials
+  const exportCSV = async () => {
+    setExporting(true);
+    try {
+      const res = await fetch("/api/admin/users/export", { credentials: "include" });
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `nivarana-users-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert("Export failed. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (isLoading) return <Spinner />;
 
   return (
     <div className="space-y-4">
-      <SearchBar value={search} onChange={setSearch} placeholder="Search by name or email…" />
+      <div className="flex items-center gap-3">
+        <SearchBar value={search} onChange={setSearch} placeholder="Search by name or email…" className="flex-1" />
+        <Button
+          size="sm" variant="outline" onClick={exportCSV} disabled={exporting}
+          className="gap-2 shrink-0 border-emerald-400/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50"
+          data-testid="button-export-csv"
+        >
+          <Download className="w-4 h-4" />
+          {exporting ? "Exporting…" : "Export CSV"}
+        </Button>
+      </div>
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -117,6 +150,136 @@ function UsersTab() {
   );
 }
 
+// ── Feedback tab (Wellness check-ins across all users) ─────────────────────
+const MARKERS = ["energy", "digestion", "sleep", "mood", "mentalClarity", "skinHealth", "immunity", "calmness"] as const;
+const MARKER_LABELS: Record<string, string> = {
+  energy: "Energy", digestion: "Digestion", sleep: "Sleep", mood: "Mood",
+  mentalClarity: "Mental Clarity", skinHealth: "Skin Health", immunity: "Immunity", calmness: "Calmness",
+};
+
+function ScoreDot({ val }: { val: number }) {
+  const color = val >= 4 ? "bg-emerald-500" : val === 3 ? "bg-amber-400" : "bg-red-400";
+  return <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-[10px] font-bold ${color}`}>{val}</span>;
+}
+
+function FeedbackTab() {
+  const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState<number | null>(null);
+  // Filter to show only entries with notes first (most actionable for admin)
+  const [notesOnly, setNotesOnly] = useState(false);
+
+  const { data: checkins = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/feedback"],
+    retry: false,
+  });
+
+  const filtered = checkins.filter(c => {
+    const matchSearch =
+      !search ||
+      c.userEmail?.toLowerCase().includes(search.toLowerCase()) ||
+      c.userName?.toLowerCase().includes(search.toLowerCase()) ||
+      c.notes?.toLowerCase().includes(search.toLowerCase());
+    const matchNotes = !notesOnly || !!c.notes;
+    return matchSearch && matchNotes;
+  });
+
+  const withNotes = checkins.filter(c => !!c.notes).length;
+
+  if (isLoading) return <Spinner />;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 flex-wrap">
+        <SearchBar value={search} onChange={setSearch} placeholder="Search by name, email or note content…" className="flex-1" />
+        {/* Quick filter — only show entries with notes/observations */}
+        <button
+          onClick={() => setNotesOnly(v => !v)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${notesOnly
+              ? "bg-amber-500/10 border-amber-400/40 text-amber-700 dark:text-amber-400"
+              : "border-border text-muted-foreground hover:bg-muted/50"
+            }`}
+        >
+          📝 With notes ({withNotes})
+        </button>
+      </div>
+
+      {filtered.length === 0 && <EmptyState text="No wellness check-ins found" />}
+
+      <div className="space-y-2">
+        {filtered.map((c) => (
+          <Card key={c.id} className={`overflow-hidden ${c.notes ? "ring-1 ring-amber-400/30" : ""
+            }`}>
+            <button
+              className="w-full px-5 py-4 flex items-start justify-between gap-4 hover:bg-muted/30 transition-colors text-left"
+              onClick={() => setExpanded(expanded === c.id ? null : c.id)}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-medium text-sm">{c.userName || c.userEmail}</p>
+                  {c.userName && <p className="text-xs text-muted-foreground">{c.userEmail}</p>}
+                  <Badge variant="outline" className="text-[10px]">Check-in #{c.checkinNumber}</Badge>
+                  <Badge variant="outline" className={`text-[10px] ${c.overallScore >= 32 ? "border-emerald-400 text-emerald-600" :
+                      c.overallScore >= 24 ? "border-amber-400 text-amber-600" :
+                        "border-red-400 text-red-500"
+                    }`}>
+                    Score {c.overallScore}/40
+                  </Badge>
+                  {/* 📝 badge — visible without expanding so admin sees it immediately */}
+                  {c.notes && (
+                    <Badge className="text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-400/30">
+                      📝 Note
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">{fmtDate(c.createdAt)}</p>
+                {/* Show note preview even when collapsed */}
+                {c.notes && expanded !== c.id && (
+                  <p className="text-xs text-amber-800 dark:text-amber-300 mt-1.5 italic line-clamp-1">
+                    “{c.notes}”
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Activity className="w-4 h-4 text-muted-foreground" />
+                {expanded === c.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </div>
+            </button>
+
+            {expanded === c.id && (
+              <div className="border-t px-5 py-4 space-y-4">
+                {/* Wellness marker scores */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {MARKERS.map(m => (
+                    <div key={m} className="flex items-center gap-2">
+                      <ScoreDot val={c[m]} />
+                      <span className="text-xs text-muted-foreground">{MARKER_LABELS[m]}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* User's observation / note — prominent box */}
+                {c.notes ? (
+                  <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-300/40">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-1.5 flex items-center gap-1">
+                      📝 User Observation
+                    </p>
+                    <p className="text-sm text-amber-900 dark:text-amber-200 leading-relaxed">
+                      {c.notes}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic">No additional notes from user.</p>
+                )}
+              </div>
+            )}
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 // ── Conversations tab ──────────────────────────────────────────────────────
 function ConversationsTab() {
   const [search, setSearch] = useState("");
@@ -145,7 +308,7 @@ function ConversationsTab() {
               <div className="min-w-0">
                 <p className="font-medium text-sm truncate">{c.title}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {c.userEmail} · {c.messages?.length ?? 0} messages · {fmtDate(c.createdAt)}
+                  {c.userName ? `${c.userName} · ` : ""}{c.userEmail} · {c.messages?.length ?? 0} messages · {fmtDate(c.createdAt)}
                 </p>
               </div>
               {expanded === c.id
@@ -157,11 +320,10 @@ function ConversationsTab() {
                 <div className="p-4 space-y-3">
                   {c.messages?.map((m: any) => (
                     <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                        m.role === "user"
+                      <div className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${m.role === "user"
                           ? "bg-primary text-primary-foreground rounded-br-sm"
                           : "bg-muted text-foreground rounded-bl-sm"
-                      }`}>
+                        }`}>
                         <p className="text-[10px] opacity-60 mb-1 font-medium uppercase tracking-wide">{m.role}</p>
                         {m.content}
                       </div>
@@ -180,8 +342,8 @@ function ConversationsTab() {
 // ── Food Manager tab ───────────────────────────────────────────────────────
 const DOSHA_EFFECTS = ["favourable", "neutral", "unfavourable"] as const;
 const HEALTH_GOALS_KEYS = [
-  "heart_health","gut_health","inflammation","liver_function",
-  "immunity","diabetes","skin_hair","weight_management","sleep","energy",
+  "heart_health", "gut_health", "inflammation", "liver_function",
+  "immunity", "diabetes", "skin_hair", "weight_management", "sleep", "energy",
 ];
 
 function FoodsTab() {
@@ -193,6 +355,17 @@ function FoodsTab() {
     vata: "neutral" as typeof DOSHA_EFFECTS[number],
     pitta: "neutral" as typeof DOSHA_EFFECTS[number],
     kapha: "neutral" as typeof DOSHA_EFFECTS[number],
+    // Health goal effects (default neutral, editable)
+    heart_health: "neutral" as typeof DOSHA_EFFECTS[number],
+    gut_health: "neutral" as typeof DOSHA_EFFECTS[number],
+    inflammation: "neutral" as typeof DOSHA_EFFECTS[number],
+    liver_function: "neutral" as typeof DOSHA_EFFECTS[number],
+    immunity: "neutral" as typeof DOSHA_EFFECTS[number],
+    diabetes: "neutral" as typeof DOSHA_EFFECTS[number],
+    skin_hair: "neutral" as typeof DOSHA_EFFECTS[number],
+    weight_management: "neutral" as typeof DOSHA_EFFECTS[number],
+    sleep: "neutral" as typeof DOSHA_EFFECTS[number],
+    energy: "neutral" as typeof DOSHA_EFFECTS[number],
   });
   const [formError, setFormError] = useState("");
 
@@ -204,8 +377,20 @@ function FoodsTab() {
         name: form.name.trim(),
         category: form.category.trim().toLowerCase(),
         dosha_effects: { vata: form.vata, pitta: form.pitta, kapha: form.kapha },
-        health_goal_effects: Object.fromEntries(HEALTH_GOALS_KEYS.map(k => [k, "neutral"])),
+        health_goal_effects: {
+          heart_health: form.heart_health,
+          gut_health: form.gut_health,
+          inflammation: form.inflammation,
+          liver_function: form.liver_function,
+          immunity: form.immunity,
+          diabetes: form.diabetes,
+          skin_hair: form.skin_hair,
+          weight_management: form.weight_management,
+          sleep: form.sleep,
+          energy: form.energy,
+        },
       };
+
       const res = await fetch("/api/admin/foods", {
         method: "POST", credentials: "include",
         headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
@@ -214,11 +399,18 @@ function FoodsTab() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/admin/foods"] });
-      setForm({ name: "", category: "", vata: "neutral", pitta: "neutral", kapha: "neutral" });
+      setForm({
+        name: "", category: "", vata: "neutral", pitta: "neutral", kapha: "neutral",
+        heart_health: "neutral", gut_health: "neutral", inflammation: "neutral",
+        liver_function: "neutral", immunity: "neutral", diabetes: "neutral",
+        skin_hair: "neutral", weight_management: "neutral", sleep: "neutral", energy: "neutral",
+      });
       setShowForm(false); setFormError("");
     },
     onError: (e: Error) => setFormError(e.message),
   });
+
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const deleteFood = useMutation({
     mutationFn: async (name: string) => {
@@ -227,7 +419,10 @@ function FoodsTab() {
       });
       if (!res.ok) throw new Error("Failed");
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/admin/foods"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/foods"] });
+      setConfirmDelete(null);
+    },
   });
 
   const categories = Array.from(new Set(foods.map((f: any) => f.category as string))).sort();
@@ -281,6 +476,25 @@ function FoodsTab() {
                 </div>
               ))}
             </div>
+
+            {/* Health Goal Effects */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground block mb-2">Health Goal Effects</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {HEALTH_GOALS_KEYS.map(k => (
+                  <div key={k} className="space-y-0.5">
+                    <label className="text-[10px] text-muted-foreground capitalize">{k.replace(/_/g, " ")}</label>
+                    <select
+                      className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs"
+                      value={(form as any)[k]}
+                      onChange={e => setForm(p => ({ ...p, [k]: e.target.value as any }))}
+                    >
+                      {DOSHA_EFFECTS.map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            </div>
             {formError && <p className="text-xs text-destructive">{formError}</p>}
             <div className="flex gap-2">
               <Button size="sm" onClick={() => addFood.mutate()}
@@ -319,11 +533,25 @@ function FoodsTab() {
                     </td>
                   ))}
                   <td className="px-4 py-2.5 text-right">
-                    <Button size="icon" variant="ghost"
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => { if (window.confirm(`Delete "${f.name}"?`)) deleteFood.mutate(f.name); }}>
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
+                    {confirmDelete === f.name ? (
+                      <div className="flex items-center gap-1 justify-end">
+                        <span className="text-xs text-muted-foreground mr-1">Delete?</span>
+                        <Button size="icon" variant="destructive" className="h-6 w-6"
+                          onClick={() => deleteFood.mutate(f.name)}>
+                          <CheckCircle className="w-3 h-3" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-6 w-6"
+                          onClick={() => setConfirmDelete(null)}>
+                          <XCircle className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button size="icon" variant="ghost"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => setConfirmDelete(f.name)}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -365,7 +593,7 @@ function DoshaBadge({ dosha }: { dosha: string }) {
 function EffectBadge({ effect }: { effect: string }) {
   const cls =
     effect === "favourable" ? "border-green-400 text-green-600 dark:text-green-400" :
-    effect === "unfavourable" ? "border-red-400 text-red-500 dark:text-red-400" : "";
+      effect === "unfavourable" ? "border-red-400 text-red-500 dark:text-red-400" : "";
   return <Badge variant="outline" className={`capitalize text-xs ${cls}`}>{effect ?? "—"}</Badge>;
 }
 
@@ -386,9 +614,11 @@ function fmtDate(d: string | null | undefined) {
 const TABS: { id: Tab; label: string; icon: any }[] = [
   { id: "stats", label: "Overview", icon: BarChart3 },
   { id: "users", label: "Users", icon: Users },
+  { id: "feedback", label: "Feedback", icon: Activity },
   { id: "conversations", label: "Conversations", icon: MessageSquare },
   { id: "foods", label: "Food Manager", icon: Leaf },
 ];
+
 
 export default function Admin() {
   const [tab, setTab] = useState<Tab>("stats");
@@ -433,11 +663,10 @@ export default function Admin() {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                tab === t.id
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === t.id
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-              }`}
+                }`}
             >
               <t.icon className="w-4 h-4" />
               <span className="hidden sm:inline">{t.label}</span>
@@ -448,8 +677,10 @@ export default function Admin() {
         {/* Content */}
         {tab === "stats" && <StatsTab />}
         {tab === "users" && <UsersTab />}
+        {tab === "feedback" && <FeedbackTab />}
         {tab === "conversations" && <ConversationsTab />}
         {tab === "foods" && <FoodsTab />}
+
       </div>
     </div>
   );

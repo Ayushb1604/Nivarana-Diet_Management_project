@@ -187,44 +187,25 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-xl border-b border-border/60 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shadow-primary/20">
+                <Leaf className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <span className="font-serif text-xl font-bold tracking-tight">NIVARANA</span>
+            </div>
+            <div className="hidden md:flex items-center gap-1">
+              {([{label:"Features",id:"features"},{label:"How It Works",id:"how-it-works"},{label:"Doshas",id:"doshas"},{label:"Testimonials",id:"testimonials"}] as const).map(({label,id})=>(
+                <button key={id} onClick={()=>scrollToSection(id)}
+                  className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-all duration-200"
+                  data-testid={`link-${id}`}>{label}</button>
+              ))}
+            </div>
             <div className="flex items-center gap-2">
-              <Leaf className="h-7 w-7 text-primary" />
-              <span className="font-serif text-xl font-semibold text-foreground">NIVARANA</span>
-            </div>
-            <div className="hidden md:flex items-center gap-6">
-              <button 
-                onClick={() => scrollToSection("features")}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                data-testid="link-features"
-              >
-                Features
-              </button>
-              <button 
-                onClick={() => scrollToSection("how-it-works")}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                data-testid="link-how-it-works"
-              >
-                How It Works
-              </button>
-              <button 
-                onClick={() => scrollToSection("doshas")}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                data-testid="link-doshas"
-              >
-                Doshas
-              </button>
-            </div>
-            <div className="flex items-center gap-3">
               <ThemeToggle />
-              <Button 
-                onClick={() => openAuth("signup")}
-                data-testid="button-login"
-              >
-                Get Started
-              </Button>
+              <Button onClick={()=>openAuth("signup")} className="shadow-md shadow-primary/20" data-testid="button-login">Get Started</Button>
             </div>
           </div>
         </div>
@@ -242,7 +223,7 @@ export default function Landing() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center max-w-4xl mx-auto">
             <div className="animate-fade-in-up">
-              <span className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-8">
+              <span className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 text-primary rounded-full text-sm font-semibold mb-8 shadow-sm">
                 <Sparkles className="w-4 h-4" />
                 Ancient Wisdom, Modern Wellness
               </span>
@@ -250,7 +231,7 @@ export default function Landing() {
             
             <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-6 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
               Discover Your Path to
-              <span className="block text-primary mt-2">Balanced Living</span>
+              <span className="block gradient-text mt-2">Balanced Living</span>
             </h1>
             
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
@@ -280,19 +261,19 @@ export default function Landing() {
             </div>
             
             {/* Stats */}
-            <div className="flex flex-wrap justify-center gap-8 mt-16 animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-foreground">70+</div>
-                <div className="text-sm text-muted-foreground">Foods Analyzed</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-foreground">10</div>
-                <div className="text-sm text-muted-foreground">Health Goals</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-foreground">30</div>
-                <div className="text-sm text-muted-foreground">Quiz Questions</div>
-              </div>
+            <div className="flex flex-wrap justify-center gap-4 mt-16 animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
+              {([
+                { value:"70+", label:"Foods Analyzed", sub:"All dosha types" },
+                { value:"10",  label:"Health Goals",   sub:"Targeted guidance" },
+                { value:"30",  label:"Quiz Questions", sub:"Science-backed" },
+                { value:"3",   label:"Dosha Types",    sub:"For every body" },
+              ] as const).map(s=>(
+                <div key={s.label} className="text-center px-6 py-5 rounded-2xl bg-card/70 border border-border/60 backdrop-blur-sm hover:bg-card hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-default min-w-[120px]">
+                  <div className="text-4xl font-bold gradient-text-primary stat-number">{s.value}</div>
+                  <div className="text-sm font-semibold text-foreground mt-1">{s.label}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{s.sub}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -311,47 +292,66 @@ export default function Landing() {
       <section id="features" className="py-24 bg-card/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-4">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-wider mb-4">
+              <Sparkles className="w-3.5 h-3.5" /> Platform Features
+            </span>
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-3">
               Everything You Need for Holistic Wellness
             </h2>
+            <div className="section-divider mb-4" />
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Our comprehensive platform combines ancient Ayurvedic wisdom with modern technology 
-              to deliver personalized nutrition guidance.
+              Our comprehensive platform combines ancient Ayurvedic wisdom with modern technology
+              to deliver deeply personalized nutrition guidance.
             </p>
           </div>
-          
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="p-8 hover-elevate transition-all duration-300">
-              <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
-                <Target className="w-7 h-7 text-primary" />
+            <Card className="p-8 card-hover border-border/60 group relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-28 h-28 bg-primary/5 rounded-full -translate-y-10 translate-x-10 group-hover:bg-primary/10 transition-colors duration-300" />
+              <div className="relative">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Target className="w-7 h-7 text-primary" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-muted text-muted-foreground">30 Questions</span>
+                </div>
+                <h3 className="font-serif text-xl font-semibold mb-3">Dosha Assessment</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Answer 30 carefully crafted questions to discover your unique Ayurvedic constitution
+                  and understand your body's natural tendencies.
+                </p>
               </div>
-              <h3 className="font-serif text-xl font-semibold mb-3">Dosha Assessment</h3>
-              <p className="text-muted-foreground">
-                Answer 30 carefully crafted questions to discover your unique Ayurvedic constitution 
-                and understand your body's natural tendencies.
-              </p>
             </Card>
-            
-            <Card className="p-8 hover-elevate transition-all duration-300">
-              <div className="w-14 h-14 bg-accent/20 rounded-xl flex items-center justify-center mb-6">
-                <Leaf className="w-7 h-7 text-accent-foreground" />
+            <Card className="p-8 card-hover border-border/60 group relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-28 h-28 bg-accent/5 rounded-full -translate-y-10 translate-x-10 group-hover:bg-accent/10 transition-colors duration-300" />
+              <div className="relative">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="w-14 h-14 bg-accent/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Leaf className="w-7 h-7 text-accent-foreground" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-muted text-muted-foreground">70+ Foods</span>
+                </div>
+                <h3 className="font-serif text-xl font-semibold mb-3">Personalized Food Lists</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Receive tiered food recommendations based on your dosha — from highly favorable
+                  choices to foods best avoided for your constitution.
+                </p>
               </div>
-              <h3 className="font-serif text-xl font-semibold mb-3">Personalized Food Lists</h3>
-              <p className="text-muted-foreground">
-                Receive tiered food recommendations based on your dosha, from highly favorable 
-                choices to foods to avoid.
-              </p>
             </Card>
-            
-            <Card className="p-8 hover-elevate transition-all duration-300">
-              <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
-                <Heart className="w-7 h-7 text-primary" />
+            <Card className="p-8 card-hover border-border/60 group relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-28 h-28 bg-primary/5 rounded-full -translate-y-10 translate-x-10 group-hover:bg-primary/10 transition-colors duration-300" />
+              <div className="relative">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Heart className="w-7 h-7 text-primary" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-muted text-muted-foreground">10 Goals</span>
+                </div>
+                <h3 className="font-serif text-xl font-semibold mb-3">Health Goals</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Choose from 10 specific health goals like immunity, digestion, or weight management
+                  for even more targeted recommendations.
+                </p>
               </div>
-              <h3 className="font-serif text-xl font-semibold mb-3">Health Goals</h3>
-              <p className="text-muted-foreground">
-                Choose from 10 specific health goals like immunity, digestion, or weight management 
-                for even more targeted recommendations.
-              </p>
             </Card>
           </div>
         </div>
@@ -361,14 +361,17 @@ export default function Landing() {
       <section id="how-it-works" className="py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-4">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-wider mb-4">
+              <CheckCircle className="w-3.5 h-3.5" /> Simple Process
+            </span>
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-3">
               Your Journey to Balance
             </h2>
+            <div className="section-divider mb-4" />
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Getting started with personalized Ayurvedic nutrition is simple and intuitive.
             </p>
           </div>
-          
           <div className="grid md:grid-cols-4 gap-8">
             {[
               { step: "1", title: "Create Account", description: "Sign up and enter your basic health information like height and weight." },
@@ -376,16 +379,16 @@ export default function Landing() {
               { step: "3", title: "Get Your Profile", description: "View your unique dosha breakdown with detailed explanations." },
               { step: "4", title: "Explore Foods", description: "Browse personalized food recommendations organized by favorability." },
             ].map((item, index) => (
-              <div key={item.step} className="relative">
+              <div key={item.step} className="relative group">
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/70 text-primary-foreground rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto mb-4 shadow-lg shadow-primary/20 group-hover:scale-105 group-hover:shadow-primary/30 transition-all duration-300">
                     {item.step}
                   </div>
                   <h3 className="font-serif text-lg font-semibold mb-2">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
                 </div>
                 {index < 3 && (
-                  <div className="hidden md:block absolute top-8 left-[calc(50%+40px)] w-[calc(100%-80px)] h-0.5 bg-border" />
+                  <div className="hidden md:block absolute top-8 left-[calc(50%+40px)] w-[calc(100%-80px)] h-0.5 bg-gradient-to-r from-primary/40 to-border border-0" />
                 )}
               </div>
             ))}
@@ -397,11 +400,15 @@ export default function Landing() {
       <section id="doshas" className="py-24 bg-card/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-4">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-wider mb-4">
+              <Sparkles className="w-3.5 h-3.5" /> Ayurvedic Science
+            </span>
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-3">
               The Three Doshas
             </h2>
+            <div className="section-divider mb-4" />
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              In Ayurveda, each person has a unique combination of three fundamental energies 
+              In Ayurveda, each person has a unique combination of three fundamental energies
               that govern their physical and mental characteristics.
             </p>
           </div>
@@ -485,45 +492,104 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Testimonials */}
+      <section id="testimonials" className="py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-wider mb-4">
+              <Heart className="w-3.5 h-3.5" /> User Stories
+            </span>
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-3">Transforming Lives Through Ayurveda</h2>
+            <div className="section-divider" />
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {([
+              { name:"Priya Sharma", role:"Yoga Instructor", text:"Nivarana completely changed how I think about food. Understanding my Vata constitution helped me fix years of digestive issues naturally.", avatar:"PS" },
+              { name:"Arjun Mehta", role:"Software Engineer", text:"I was skeptical at first, but the dosha assessment was spot-on. My energy levels have improved dramatically following the food recommendations.", avatar:"AM" },
+              { name:"Deepa Nair", role:"Wellness Coach", text:"The personalized food lists are incredibly detailed. I now recommend Nivarana to all my clients as the starting point for Ayurvedic wellness.", avatar:"DN" },
+            ] as const).map(({name,role,text,avatar})=>(
+              <div key={name} className="card-hover p-8 rounded-2xl bg-card border border-border/60 flex flex-col gap-4">
+                <div className="flex gap-0.5 mb-1">
+                  {[1,2,3,4,5].map(i=><span key={i} className="text-accent text-base">★</span>)}
+                </div>
+                <p className="text-muted-foreground text-sm leading-relaxed flex-1 italic">"{text}"</p>
+                <div className="flex items-center gap-3 pt-4 border-t border-border/40">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-xs font-bold text-primary">{avatar}</div>
+                  <div>
+                    <div className="text-sm font-semibold">{name}</div>
+                    <div className="text-xs text-muted-foreground">{role}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
-      <section className="py-24 bg-primary text-primary-foreground">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold mb-6">
-            Ready to Discover Your Dosha?
+      <section className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-primary/80" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-primary-foreground">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/15 rounded-full text-xs font-bold uppercase tracking-wider mb-6">
+            <Sparkles className="w-3.5 h-3.5" /> Free to Start
+          </span>
+          <h2 className="font-serif text-4xl sm:text-5xl font-bold mb-6 leading-tight">
+            Ready to Discover<br />Your True Dosha?
           </h2>
-          <p className="text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-            Join thousands of others who have transformed their health through personalized 
-            Ayurvedic nutrition. Start your journey today.
+          <p className="text-primary-foreground/80 mb-10 max-w-xl mx-auto text-lg">
+            Join thousands who have transformed their health through personalized Ayurvedic nutrition.
           </p>
-          <Button 
-            size="lg" 
-            variant="secondary" 
-            className="text-base px-8 gap-2"
-            onClick={() => openAuth("signup")}
-            data-testid="button-cta-signup"
-          >
-            Get Started Free
-            <ArrowRight className="w-4 h-4" />
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button size="lg" variant="secondary" className="text-base px-10 gap-2 shadow-xl"
+              onClick={()=>openAuth("signup")} data-testid="button-cta-signup">
+              Get Started Free <ArrowRight className="w-4 h-4" />
+            </Button>
+            <button onClick={()=>scrollToSection("features")}
+              className="text-primary-foreground/80 hover:text-primary-foreground text-sm underline underline-offset-4 transition-colors">
+              Explore features first
+            </button>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-border">
+      <footer className="py-16 border-t border-border bg-card/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <Leaf className="h-6 w-6 text-primary" />
-              <span className="font-serif text-lg font-semibold">NIVARANA</span>
+          <div className="grid md:grid-cols-4 gap-10 mb-12">
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                  <Leaf className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <span className="font-serif text-xl font-bold">NIVARANA</span>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
+                Personalized Ayurvedic Diet Management. Ancient wisdom meets modern wellness.
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Personalized Ayurvedic Diet Management
+            <div>
+              <h4 className="font-semibold text-sm mb-4">Platform</h4>
+              <ul className="space-y-2.5">
+                {([{label:"Features",id:"features"},{label:"How It Works",id:"how-it-works"},{label:"The Doshas",id:"doshas"}] as const).map(({label,id})=>(
+                  <li key={id}><button onClick={()=>scrollToSection(id)} className="text-sm text-muted-foreground hover:text-foreground transition-colors">{label}</button></li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-sm mb-4">Account</h4>
+              <ul className="space-y-2.5">
+                <li><button onClick={()=>openAuth("signup")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Sign Up Free</button></li>
+                <li><button onClick={()=>openAuth("login")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Log In</button></li>
+              </ul>
+            </div>
+          </div>
+          <div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Nivarana. All rights reserved.</p>
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+              Made with <Heart className="w-3.5 h-3.5 text-destructive" /> for wellness
             </p>
-            <div className="flex items-center gap-6">
-              <span className="text-sm text-muted-foreground">
-                Made with <Heart className="inline w-4 h-4 text-destructive" /> for wellness
-              </span>
-            </div>
           </div>
         </div>
       </footer>

@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, rateLimit } from "./replitAuth";
 import { getFilteredFoods } from "./foodFilter";
 import { registerChatRoutes } from "./replit_integrations/chat";
 import {
@@ -16,13 +16,13 @@ import {
   type MealPlanContext,
 } from "./mealPlanBuilder";
 import { generateDoshaExplanation, generateWellnessInsights } from "./aiInsights";
-import { 
-  insertUserProfileSchema, 
+import {
+  insertUserProfileSchema,
   insertDoshaAssessmentSchema,
   insertUserHealthGoalSchema,
   insertWellnessCheckinSchema,
   healthGoals,
-  type HealthGoalKey 
+  type HealthGoalKey
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -30,7 +30,7 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  
+
   // Setup authentication
   await setupAuth(app);
 
@@ -44,11 +44,11 @@ export async function registerRoutes(
     try {
       const userId = req.userId;
       const profile = await storage.getProfile(userId);
-      
+
       if (!profile) {
         return res.json({ onboardingComplete: 0 });
       }
-      
+
       res.json(profile);
     } catch (error) {
       console.error("Error getting profile:", error);
@@ -60,7 +60,7 @@ export async function registerRoutes(
   app.post("/api/profile", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.userId;
-      
+
       const profileData = insertUserProfileSchema.parse({
         userId,
         age: req.body.age,
@@ -71,14 +71,14 @@ export async function registerRoutes(
         maintenanceCalories: req.body.maintenanceCalories,
         activityLevel: req.body.activityLevel,
       });
-      
+
       const existing = await storage.getProfile(userId);
-      
+
       if (existing) {
         const updated = await storage.updateProfile(userId, profileData);
         return res.json(updated);
       }
-      
+
       const profile = await storage.createProfile(profileData);
       res.json(profile);
     } catch (error) {
@@ -95,11 +95,11 @@ export async function registerRoutes(
     try {
       const userId = req.userId;
       const assessment = await storage.getDoshaAssessment(userId);
-      
+
       if (!assessment) {
         return res.status(404).json({ message: "No assessment found" });
       }
-      
+
       res.json(assessment);
     } catch (error) {
       console.error("Error getting assessment:", error);
@@ -112,7 +112,7 @@ export async function registerRoutes(
     try {
       const userId = req.userId;
       const { responses, vataScore, pittaScore, kaphaScore, percentages, constitution } = req.body;
-      
+
       const assessmentData = insertDoshaAssessmentSchema.parse({
         userId,
         vataScore,
@@ -126,7 +126,7 @@ export async function registerRoutes(
         secondaryDosha: constitution.secondary,
         responses,
       });
-      
+
       const assessment = await storage.createDoshaAssessment(assessmentData);
       res.json(assessment);
     } catch (error) {
@@ -143,11 +143,11 @@ export async function registerRoutes(
     try {
       const userId = req.userId;
       const goal = await storage.getHealthGoal(userId);
-      
+
       if (!goal) {
         return res.status(404).json({ message: "No health goal found" });
       }
-      
+
       res.json(goal);
     } catch (error) {
       console.error("Error getting health goal:", error);
@@ -159,13 +159,13 @@ export async function registerRoutes(
   app.post("/api/health-goal", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.userId;
-      
+
       const goalData = insertUserHealthGoalSchema.parse({
         userId,
         goalType: req.body.goalType,
         isBalancedDiet: req.body.isBalancedDiet ? 1 : 0,
       });
-      
+
       const goal = await storage.upsertHealthGoal(goalData);
       res.json(goal);
     } catch (error) {
@@ -183,26 +183,26 @@ export async function registerRoutes(
       const userId = req.userId;
       const mode = req.query.mode as string;
       const goalParam = req.query.goal as HealthGoalKey | undefined;
-      
+
       const assessment = await storage.getDoshaAssessment(userId);
-      
+
       if (!assessment) {
         return res.status(400).json({ message: "Please complete dosha assessment first" });
       }
-      
+
       const constitutionType = assessment.constitutionType as 'single' | 'dual';
       const primaryDosha = assessment.primaryDosha as 'vata' | 'pitta' | 'kapha';
       const secondaryDosha = assessment.secondaryDosha as 'vata' | 'pitta' | 'kapha' | null;
-      
+
       const healthGoal = mode === 'goal' ? goalParam : null;
-      
+
       const filteredFoods = getFilteredFoods(
         constitutionType,
         primaryDosha,
         secondaryDosha,
         healthGoal || null
       );
-      
+
       res.json(filteredFoods);
     } catch (error) {
       console.error("Error filtering foods:", error);
@@ -243,7 +243,7 @@ export async function registerRoutes(
       // Determine health goal label
       const activeGoal: HealthGoalKey | null =
         mode === 'goal' && goalParam ? goalParam :
-        (healthGoal?.goalType as HealthGoalKey) ?? null;
+          (healthGoal?.goalType as HealthGoalKey) ?? null;
 
       const healthGoalLabel = activeGoal ? healthGoals[activeGoal] : null;
 
@@ -373,8 +373,18 @@ export async function registerRoutes(
 
       const checkin = await storage.createWellnessCheckin({
         userId,
-        ...parsed,
+        energy: parsed.energy,
+        digestion: parsed.digestion,
+        sleep: parsed.sleep,
+        mood: parsed.mood,
+        mentalClarity: parsed.mentalClarity,
+        skinHealth: parsed.skinHealth,
+        immunity: parsed.immunity,
+        calmness: parsed.calmness,
         notes: parsed.notes ?? null,
+        // checkinNumber and overallScore are computed inside storage.createWellnessCheckin
+        checkinNumber: 0,   // placeholder — overwritten by storage layer
+        overallScore: 0,    // placeholder — overwritten by storage layer
       });
 
       res.json(checkin);
@@ -474,7 +484,8 @@ export async function registerRoutes(
   const FOOD_FILE = join(dirname(fileURLToPath(import.meta.url)), "data", "food_dataset.json");
 
   const requireAdmin: RequestHandler = async (req: any, res, next) => {
-    const userId = (req.session as any)?.userId;
+    // Use the same userId field that isAuthenticated attaches to req
+    const userId = req.userId ?? (req.session as any)?.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
     const user = await storage.getUser(userId);
     if (!user?.email) return res.status(403).json({ message: "Forbidden" });
@@ -513,27 +524,81 @@ export async function registerRoutes(
     } catch { res.status(500).json({ message: "Failed to read foods" }); }
   });
 
+  // Zod schema matching food_dataset.json structure
+  const effectEnum = z.enum(["favourable", "neutral", "unfavourable"]);
+  const foodSchema = z.object({
+    name: z.string().min(1).max(120),
+    category: z.string().min(1).max(80),
+    dosha_effects: z.object({
+      vata: effectEnum,
+      pitta: effectEnum,
+      kapha: effectEnum,
+    }),
+    health_goal_effects: z.object({
+      heart_health: effectEnum,
+      gut_health: effectEnum,
+      inflammation: effectEnum,
+      liver_function: effectEnum,
+      immunity: effectEnum,
+      diabetes: effectEnum,
+      skin_hair: effectEnum,
+      weight_management: effectEnum,
+      sleep: effectEnum,
+      energy: effectEnum,
+    }),
+  });
+
+
   app.post("/api/admin/foods", requireAdmin, (req, res) => {
     try {
+      const parsed = foodSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid food data", errors: parsed.error.errors });
+      }
+      const food = parsed.data;
       const data = JSON.parse(readFileSync(FOOD_FILE, "utf-8"));
-      const food = req.body;
-      if (!food?.name || !food?.category) return res.status(400).json({ message: "Name and category are required" });
       if (data.foods.find((f: any) => f.name.toLowerCase() === food.name.toLowerCase()))
         return res.status(409).json({ message: "Food already exists" });
       data.foods.push(food);
       writeFileSync(FOOD_FILE, JSON.stringify(data, null, 2));
       res.json({ success: true });
-    } catch { res.status(500).json({ message: "Failed to add food" }); }
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: "Invalid data", errors: err.errors });
+      res.status(500).json({ message: "Failed to add food" });
+    }
   });
 
   app.delete("/api/admin/foods/:name", requireAdmin, (req, res) => {
     try {
+      const name = decodeURIComponent(req.params.name).trim();
+      if (!name || name.length > 120) return res.status(400).json({ message: "Invalid food name" });
       const data = JSON.parse(readFileSync(FOOD_FILE, "utf-8"));
-      const name = decodeURIComponent(req.params.name);
       data.foods = data.foods.filter((f: any) => f.name.toLowerCase() !== name.toLowerCase());
       writeFileSync(FOOD_FILE, JSON.stringify(data, null, 2));
       res.json({ success: true });
     } catch { res.status(500).json({ message: "Failed to delete food" }); }
+  });
+
+  // ── Admin: export users as CSV
+  app.get("/api/admin/users/export", requireAdmin, async (_req, res) => {
+    try {
+      const users = await storage.getAdminUsers();
+      const headers = ["id", "firstName", "lastName", "email", "primaryDosha", "secondaryDosha", "healthGoal", "createdAt", "lastActive"];
+      const escape = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+      const rows = users.map((u: any) =>
+        headers.map(h => escape(u[h])).join(",")
+      );
+      const csv = [headers.join(","), ...rows].join("\n");
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename="nivarana-users-${new Date().toISOString().slice(0, 10)}.csv"`);
+      res.send(csv);
+    } catch { res.status(500).json({ message: "Export failed" }); }
+  });
+
+  // ── Admin: wellness check-ins across all users (used as "feedback")
+  app.get("/api/admin/feedback", requireAdmin, async (_req, res) => {
+    try { res.json(await storage.getAdminWellnessCheckins()); }
+    catch { res.status(500).json({ message: "Failed" }); }
   });
 
   return httpServer;

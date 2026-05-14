@@ -656,7 +656,7 @@ function MealRow({
   meal,
   onClick,
 }: {
-  mealKey: keyof AIMealPlan["meals"];
+  mealKey: keyof DayPlan["meals"];
   meal: MealEntry;
   onClick: () => void;
 }) {
@@ -705,7 +705,7 @@ function MealDetailView({
   meal,
   onBack,
 }: {
-  mealKey: keyof AIMealPlan["meals"];
+  mealKey: keyof DayPlan["meals"];
   meal: MealEntry;
   onBack: () => void;
 }) {

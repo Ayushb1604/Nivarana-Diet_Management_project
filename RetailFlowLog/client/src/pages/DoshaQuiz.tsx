@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { doshaQuestions, calculateDoshaPercentages, classifyConstitution } from "@/lib/doshaQuestions";
+import { motion, AnimatePresence } from "framer-motion";
 import type { QuizResponse } from "@shared/schema";
 import { Leaf, ArrowRight, ArrowLeft, Wind, Flame, Mountain, CheckCircle } from "lucide-react";
 
@@ -39,10 +40,12 @@ export default function DoshaQuiz() {
   const [responses, setResponses] = useState<QuizResponse[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [hasGoneBack, setHasGoneBack] = useState(false);
+  const [slideDirection, setSlideDirection] = useState<1 | -1>(1); // 1 = forward, -1 = back
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   
   const question = doshaQuestions[currentQuestion];
-  const progress = ((currentQuestion) / doshaQuestions.length) * 100;
+  const progress = ((currentQuestion + 1) / doshaQuestions.length) * 100;
   const DoshaIcon = doshaIcons[question.dosha];
   
   const mutation = useMutation({
@@ -90,24 +93,27 @@ export default function DoshaQuiz() {
     // Auto-advance only if NOT revisiting and NOT the last question
     if (!hasGoneBack && currentQuestion < doshaQuestions.length - 1) {
       timeoutRef.current = setTimeout(() => {
+        setSlideDirection(1);
         setCurrentQuestion((prev) => prev + 1);
         setSelectedAnswer(null);
       }, 300);
     }
   };
 
+
   const handleNext = () => {
     if (selectedAnswer === null) return;
 
     if (currentQuestion < doshaQuestions.length - 1) {
       const nextQ = currentQuestion + 1;
+      setSlideDirection(1);
       setCurrentQuestion(nextQ);
       // Load existing answer if already answered
       const existing = responses[nextQ];
       setSelectedAnswer(existing ? existing.score : null);
       if (!existing) setHasGoneBack(false);
     } else {
-      // Submit — use the full responses array (answers stored by index)
+      // Submit
       const validResponses = responses.filter(Boolean);
       const vataScore = validResponses.filter(r => r.dosha === 'vata').reduce((sum, r) => sum + r.score, 0);
       const pittaScore = validResponses.filter(r => r.dosha === 'pitta').reduce((sum, r) => sum + r.score, 0);
@@ -115,16 +121,10 @@ export default function DoshaQuiz() {
       const percentages = calculateDoshaPercentages(validResponses);
       const constitution = classifyConstitution(percentages);
 
-      mutation.mutate({
-        responses: validResponses,
-        vataScore,
-        pittaScore,
-        kaphaScore,
-        percentages,
-        constitution,
-      });
+      mutation.mutate({ responses: validResponses, vataScore, pittaScore, kaphaScore, percentages, constitution });
     }
   };
+
 
   const handleBack = () => {
     // Cancel any pending auto-advance
@@ -132,15 +132,16 @@ export default function DoshaQuiz() {
 
     if (currentQuestion > 0) {
       const prevQ = currentQuestion - 1;
+      setSlideDirection(-1);
       setCurrentQuestion(prevQ);
       const previousResponse = responses[prevQ];
       setSelectedAnswer(previousResponse ? previousResponse.score : null);
       setHasGoneBack(true);
     } else {
-      // On first question — go back to dashboard (reliable SPA navigation)
       setLocation("/dashboard");
     }
   };
+
   
   const isLastQuestion = currentQuestion === doshaQuestions.length - 1;
 
@@ -176,10 +177,20 @@ export default function DoshaQuiz() {
         <Progress value={progress} className="h-1 rounded-none" />
       </div>
 
-      {/* Main content — scrolls only if screen is genuinely too short */}
+      {/* Main content */}
       <main className="flex-1 overflow-y-auto flex items-center justify-center px-4 py-4">
         <div className="w-full max-w-2xl">
-          <Card className="animate-fade-in-up shadow-sm">
+          {/* Animated question card with slide direction */}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={currentQuestion}
+              initial={{ opacity: 0, x: slideDirection * 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: slideDirection * -40 }}
+              transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
+            >
+          <Card className="shadow-sm">
+
             <CardHeader className="text-center pb-3 pt-5">
               {/* Dosha indicator */}
               <div className="flex justify-center mb-3">
@@ -258,6 +269,9 @@ export default function DoshaQuiz() {
               </div>
             </CardContent>
           </Card>
+            </motion.div>
+          </AnimatePresence>
+
 
           {/* Question category indicator */}
           <div className="mt-4 flex justify-center gap-5">
