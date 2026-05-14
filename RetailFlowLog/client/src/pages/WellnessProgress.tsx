@@ -431,38 +431,7 @@ export default function WellnessProgress() {
               </motion.div>
             )}
 
-            {/* Past check-in notes */}
-            {checkins.some((c) => c.notes) && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <Card className="bg-card/60">
-                  <CardHeader>
-                    <CardTitle className="font-serif text-2xl flex items-center gap-2">
-                      <Calendar className="w-5 h-5 text-primary" />
-                      Your Notes
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {checkins
-                      .filter((c) => c.notes)
-                      .slice()
-                      .reverse()
-                      .map((c) => (
-                        <div key={c.id} className="p-3 rounded-lg bg-background/40 border border-border/40">
-                          <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                            {c.checkinNumber === 1 ? "Baseline" : `Check-in ${c.checkinNumber}`}
-                            {c.createdAt && ` • ${format(new Date(c.createdAt), "MMM d, yyyy")}`}
-                          </div>
-                          <p className="text-sm leading-relaxed">{c.notes}</p>
-                        </div>
-                      ))}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
+
           </>
         )}
       </main>

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useLocation, Link } from "wouter";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -98,10 +98,6 @@ export default function WellnessCheckin() {
   const isLastQuestion = currentIdx === markerKeys.length - 1;
   const allAnswered = answeredCount === markerKeys.length;
 
-  // Track whether user jumped via pill (suppress auto-advance in that case)
-  const jumpedRef = useRef(false);
-  const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const submitMutation = useMutation({
     mutationFn: async () => {
       const payload: Record<string, number | string | null> = {
@@ -133,20 +129,10 @@ export default function WellnessCheckin() {
 
   const handleSelect = (value: number) => {
     setResponses((prev) => ({ ...prev, [currentKey]: value }));
-    // Auto-advance only if NOT on last question AND user did NOT jump here via a pill
-    if (!isLastQuestion && !jumpedRef.current) {
-      if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
-      autoAdvanceTimer.current = setTimeout(() => {
-        setCurrentIdx((i) => Math.min(i + 1, markerKeys.length - 1));
-      }, 250);
+    // Auto-advance after a brief moment, except on the last question
+    if (!isLastQuestion) {
+      setTimeout(() => setCurrentIdx((i) => Math.min(i + 1, markerKeys.length - 1)), 250);
     }
-  };
-
-  // Jump to a specific question via marker pill — suppresses auto-advance
-  const handleJumpToQuestion = (i: number) => {
-    if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
-    jumpedRef.current = true;
-    setCurrentIdx(i);
   };
 
   return (
@@ -203,7 +189,7 @@ export default function WellnessCheckin() {
             {markerKeys.map((k, i) => (
               <button
                 key={k}
-                onClick={() => handleJumpToQuestion(i)}
+                onClick={() => setCurrentIdx(i)}
                 className={`text-xs font-medium px-2.5 py-1 rounded-full transition-all ${
                   i === currentIdx
                     ? "bg-primary text-primary-foreground shadow-md"
@@ -274,10 +260,7 @@ export default function WellnessCheckin() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                jumpedRef.current = true;
-                setCurrentIdx((i) => Math.max(0, i - 1));
-              }}
+              onClick={() => setCurrentIdx((i) => Math.max(0, i - 1))}
               disabled={currentIdx === 0}
               className="gap-2"
               data-testid="button-prev-question"
@@ -289,10 +272,7 @@ export default function WellnessCheckin() {
             {!isLastQuestion ? (
               <Button
                 size="sm"
-                onClick={() => {
-                  jumpedRef.current = false; // sequential nav re-enables auto-advance
-                  setCurrentIdx((i) => Math.min(i + 1, markerKeys.length - 1));
-                }}
+                onClick={() => setCurrentIdx((i) => Math.min(i + 1, markerKeys.length - 1))}
                 disabled={responses[currentKey] === null}
                 className="gap-2"
                 data-testid="button-next-question"

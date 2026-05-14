@@ -559,7 +559,7 @@ export default function MealPlan() {
             <Button
               size="sm"
               className="gap-2 text-xs shadow-md shadow-primary/20"
-              onClick={generatePlan}
+              onClick={() => generatePlan()}
               disabled={isGenerating}
               data-testid="button-generate-plan"
             >
