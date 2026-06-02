@@ -35,7 +35,7 @@ export default function DoshaQuiz() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [responses, setResponses] = useState<QuizResponse[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -43,11 +43,11 @@ export default function DoshaQuiz() {
   const [slideDirection, setSlideDirection] = useState<1 | -1>(1); // 1 = forward, -1 = back
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  
+
   const question = doshaQuestions[currentQuestion];
   const progress = ((currentQuestion + 1) / doshaQuestions.length) * 100;
   const DoshaIcon = doshaIcons[question.dosha];
-  
+
   const mutation = useMutation({
     mutationFn: async (data: {
       responses: QuizResponse[];
@@ -75,7 +75,7 @@ export default function DoshaQuiz() {
       });
     },
   });
-  
+
   const handleSelectAnswer = (value: number) => {
     // Save the answer at the current index (preserving future answers)
     const newResponses = [...responses];
@@ -142,7 +142,7 @@ export default function DoshaQuiz() {
     }
   };
 
-  
+
   const isLastQuestion = currentQuestion === doshaQuestions.length - 1;
 
   return (
@@ -189,86 +189,84 @@ export default function DoshaQuiz() {
               exit={{ opacity: 0, x: slideDirection * -40 }}
               transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
             >
-          <Card className="shadow-sm">
+              <Card className="shadow-sm">
 
-            <CardHeader className="text-center pb-3 pt-5">
-              {/* Dosha indicator */}
-              <div className="flex justify-center mb-3">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 ${doshaColors[question.dosha]}`}>
-                  <DoshaIcon className="w-6 h-6" />
-                </div>
-              </div>
-
-              <CardTitle className="font-serif text-xl sm:text-2xl leading-snug">
-                {question.text}
-              </CardTitle>
-
-              <CardDescription className="mt-1.5 text-sm">
-                Rate how much this applies to you
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="space-y-3 pb-5">
-              {/* Answer options */}
-              <div className="space-y-2">
-                {answerOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => handleSelectAnswer(option.value)}
-                    className={`w-full px-4 py-3 rounded-lg border-2 text-left transition-all duration-200 hover-elevate ${
-                      selectedAnswer === option.value
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-muted-foreground/30"
-                    }`}
-                    data-testid={`answer-${option.value}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                        selectedAnswer === option.value
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-muted"
-                      }`}>
-                        {selectedAnswer === option.value && <CheckCircle className="w-4 h-4" />}
-                      </div>
-                      <div>
-                        <div className="font-medium text-sm">{option.label}</div>
-                        <div className="text-xs text-muted-foreground">{option.description}</div>
-                      </div>
+                <CardHeader className="text-center pb-3 pt-5">
+                  {/* Dosha indicator */}
+                  <div className="flex justify-center mb-3">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 ${doshaColors[question.dosha]}`}>
+                      <DoshaIcon className="w-6 h-6" />
                     </div>
-                  </button>
-                ))}
-              </div>
+                  </div>
 
-              {/* Navigation */}
-              <div className="flex gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 gap-2"
-                  onClick={handleBack}
-                  data-testid="button-back"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back
-                </Button>
-                {(hasGoneBack || isLastQuestion) && (
-                  <Button
-                    className="flex-1 gap-2"
-                    onClick={handleNext}
-                    disabled={selectedAnswer === null || mutation.isPending}
-                    data-testid="button-next"
-                  >
-                    {mutation.isPending ? (
-                      "Calculating..."
-                    ) : isLastQuestion ? (
-                      <>Complete <CheckCircle className="w-4 h-4" /></>
-                    ) : (
-                      <>Next <ArrowRight className="w-4 h-4" /></>
+                  <CardTitle className="font-serif text-xl sm:text-2xl leading-snug">
+                    {question.text}
+                  </CardTitle>
+
+                  <CardDescription className="mt-1.5 text-sm">
+                    Rate how much this applies to you
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent className="space-y-3 pb-5">
+                  {/* Answer options */}
+                  <div className="space-y-2">
+                    {answerOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => handleSelectAnswer(option.value)}
+                        className={`w-full px-4 py-3 rounded-lg border-2 text-left transition-all duration-200 hover-elevate ${selectedAnswer === option.value
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-muted-foreground/30"
+                          }`}
+                        data-testid={`answer-${option.value}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${selectedAnswer === option.value
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-muted"
+                            }`}>
+                            {selectedAnswer === option.value && <CheckCircle className="w-4 h-4" />}
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm">{option.label}</div>
+                            <div className="text-xs text-muted-foreground">{option.description}</div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Navigation */}
+                  <div className="flex gap-3 pt-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1 gap-2"
+                      onClick={handleBack}
+                      data-testid="button-back"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      Back
+                    </Button>
+                    {(hasGoneBack || isLastQuestion) && (
+                      <Button
+                        className="flex-1 gap-2"
+                        onClick={handleNext}
+                        disabled={selectedAnswer === null || mutation.isPending}
+                        data-testid="button-next"
+                      >
+                        {mutation.isPending ? (
+                          "Calculating..."
+                        ) : isLastQuestion ? (
+                          <>Complete <CheckCircle className="w-4 h-4" /></>
+                        ) : (
+                          <>Next <ArrowRight className="w-4 h-4" /></>
+                        )}
+                      </Button>
                     )}
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
           </AnimatePresence>
 

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { healthGoals, type HealthGoalKey } from "@shared/schema";
-import { 
+import {
   Leaf,
   Heart,
   Activity,
@@ -64,9 +64,9 @@ export default function HealthGoals() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [selectedGoal, setSelectedGoal] = useState<HealthGoalKey | null>(null);
-  
+
   const mutation = useMutation({
     mutationFn: async (goalType: HealthGoalKey) => {
       return apiRequest("POST", "/api/health-goal", { goalType, isBalancedDiet: false });
@@ -85,7 +85,7 @@ export default function HealthGoals() {
       });
     },
   });
-  
+
   const handleContinue = () => {
     if (selectedGoal) {
       mutation.mutate(selectedGoal);
@@ -108,39 +108,37 @@ export default function HealthGoals() {
           </div>
         </div>
       </header>
-      
+
       <main className="max-w-6xl mx-auto px-4 py-8">
         <div className="text-center mb-10">
           <h1 className="font-serif text-3xl font-bold text-foreground mb-3">
             What's Your Primary Health Focus?
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Select a health goal to receive food recommendations that support both your dosha balance 
+            Select a health goal to receive food recommendations that support both your dosha balance
             and your specific wellness objectives.
           </p>
         </div>
-        
+
         {/* Goals Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
           {(Object.entries(healthGoals) as [HealthGoalKey, string][]).map(([key, label], index) => {
             const Icon = goalIcons[key];
             const isSelected = selectedGoal === key;
-            
+
             return (
               <button
                 key={key}
                 onClick={() => setSelectedGoal(key)}
-                className={`group p-6 rounded-xl border-2 text-left transition-all duration-200 hover-elevate animate-fade-in-up ${
-                  isSelected
+                className={`group p-6 rounded-xl border-2 text-left transition-all duration-200 hover-elevate animate-fade-in-up ${isSelected
                     ? `${goalColors[key]}`
                     : "bg-gray-50/80 dark:bg-gray-900/40 border-gray-400 dark:border-gray-600 hover:border-gray-500 dark:hover:border-gray-400"
-                }`}
+                  }`}
                 style={{ animationDelay: `${index * 0.05}s` }}
                 data-testid={`goal-${key}`}
               >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
-                  isSelected ? "" : "bg-muted"
-                } ${isSelected ? goalColors[key] : ""}`}>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${isSelected ? "" : "bg-muted"
+                  } ${isSelected ? goalColors[key] : ""}`}>
                   <Icon className={`w-6 h-6 ${isSelected ? "" : "text-muted-foreground"}`} />
                 </div>
                 <h3 className="font-medium mb-1">{label}</h3>
@@ -157,7 +155,7 @@ export default function HealthGoals() {
             );
           })}
         </div>
-        
+
         {/* Continue Button */}
         <div className="flex justify-center">
           <Button
@@ -171,7 +169,7 @@ export default function HealthGoals() {
             <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
-        
+
         {/* Alternative Option */}
         <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground mb-3">

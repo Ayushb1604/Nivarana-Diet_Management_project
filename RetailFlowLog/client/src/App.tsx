@@ -70,10 +70,14 @@ function Router() {
           <Route path="/quiz" component={DoshaQuiz} />
           <Route path="/results" component={DoshaResults} />
           <Route path="/health-goals" component={HealthGoals} />
+          <Route path="/health_goals" component={() => { window.location.replace("/health-goals"); return null; }} />
           <Route path="/foods" component={FoodList} />
           <Route path="/wellness-checkin" component={WellnessCheckin} />
+          <Route path="/wellness_checkin" component={() => { window.location.replace("/wellness-checkin"); return null; }} />
           <Route path="/wellness-progress" component={WellnessProgress} />
+          <Route path="/wellness_progress" component={() => { window.location.replace("/wellness-progress"); return null; }} />
           <Route path="/meal-plan" component={MealPlan} />
+          <Route path="/meal_plan" component={() => { window.location.replace("/meal-plan"); return null; }} />
           <Route path="/admin" component={Admin} />
 
         </>

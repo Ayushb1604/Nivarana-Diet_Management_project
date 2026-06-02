@@ -8,6 +8,7 @@ import {
   conversations,
   messages,
   passwordResetTokens,
+  feedbacks,
   type User,
   type UpsertUser,
   type UserProfile,
@@ -18,9 +19,11 @@ import {
   type InsertUserHealthGoal,
   type WellnessCheckin,
   type InsertWellnessCheckin,
+  type Feedback,
+  type InsertFeedback,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, asc, and, count, lt } from "drizzle-orm";
+import { eq, asc, desc, and, count, lt } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -53,6 +56,14 @@ export interface IStorage {
   getAdminStats(): Promise<{ totalUsers: number; quizCompleted: number; wellnessCheckins: number; totalConversations: number; mealPlansGenerated: number }>;
   getAdminConversations(): Promise<any[]>;
   getAdminWellnessCheckins(): Promise<any[]>;
+  replyToCheckin(checkinId: string, reply: string): Promise<any>;
+  getUnreadAdminReplies(userId: string): Promise<any[]>;
+  markAdminReplyRead(checkinId: string): Promise<void>;
+
+  getFeedbacks(): Promise<Feedback[]>;
+  getFeedback(id: string): Promise<Feedback | undefined>;
+  createFeedback(feedback: InsertFeedback): Promise<Feedback>;
+  deleteFeedback(id: string): Promise<boolean>;
 }
 
 
@@ -268,6 +279,57 @@ export class DatabaseStorage implements IStorage {
         userName: u ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() : null,
       };
     }));
+  }
+
+  async replyToCheckin(checkinId: string, reply: string): Promise<any> {
+    const [updated] = await db
+      .update(wellnessCheckins)
+      .set({
+        adminReply: reply,
+        adminRepliedAt: new Date(),
+        adminReplyRead: 0, // mark as unread for user
+      })
+      .where(eq(wellnessCheckins.id, checkinId))
+      .returning();
+    return updated;
+  }
+
+  async getUnreadAdminReplies(userId: string): Promise<any[]> {
+    const rows = await db
+      .select()
+      .from(wellnessCheckins)
+      .where(
+        eq(wellnessCheckins.userId, userId)
+      )
+      .orderBy(asc(wellnessCheckins.adminRepliedAt));
+    // Return only those with a reply that hasn't been read
+    return rows.filter(r => r.adminReply && r.adminReplyRead === 0);
+  }
+
+  async markAdminReplyRead(checkinId: string): Promise<void> {
+    await db
+      .update(wellnessCheckins)
+      .set({ adminReplyRead: 1 })
+      .where(eq(wellnessCheckins.id, checkinId));
+  }
+
+  async getFeedbacks(): Promise<Feedback[]> {
+    return await db.select().from(feedbacks).orderBy(desc(feedbacks.createdAt));
+  }
+
+  async getFeedback(id: string): Promise<Feedback | undefined> {
+    const result = await db.select().from(feedbacks).where(eq(feedbacks.id, id));
+    return result[0];
+  }
+
+  async createFeedback(feedback: InsertFeedback): Promise<Feedback> {
+    const [newFeedback] = await db.insert(feedbacks).values(feedback).returning();
+    return newFeedback;
+  }
+
+  async deleteFeedback(id: string): Promise<boolean> {
+    const result = await db.delete(feedbacks).where(eq(feedbacks.id, id)).returning();
+    return result.length > 0;
   }
 }
 

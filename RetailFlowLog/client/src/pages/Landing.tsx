@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useSearch } from "wouter";
-import { 
-  Leaf, 
-  Heart, 
-  Target, 
-  Sparkles, 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Leaf,
+  Heart,
+  Target,
+  Sparkles,
   ArrowRight,
   CheckCircle,
   ChevronDown,
@@ -24,6 +25,11 @@ import {
 
 export default function Landing() {
   const [, setLocation] = useLocation();
+
+  const { data: feedbacks = [] } = useQuery<any[]>({
+    queryKey: ["/api/feedbacks"],
+  });
+
   const search = useSearch();
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [authTab, setAuthTab] = useState<"login" | "signup" | "forgot">("signup");
@@ -197,15 +203,15 @@ export default function Landing() {
               <span className="font-serif text-xl font-bold tracking-tight">NIVARANA</span>
             </div>
             <div className="hidden md:flex items-center gap-1">
-              {([{label:"Features",id:"features"},{label:"How It Works",id:"how-it-works"},{label:"Doshas",id:"doshas"},{label:"Testimonials",id:"testimonials"}] as const).map(({label,id})=>(
-                <button key={id} onClick={()=>scrollToSection(id)}
+              {([{ label: "Features", id: "features" }, { label: "How It Works", id: "how-it-works" }, { label: "Doshas", id: "doshas" }, { label: "Testimonials", id: "testimonials" }] as const).map(({ label, id }) => (
+                <button key={id} onClick={() => scrollToSection(id)}
                   className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-all duration-200"
                   data-testid={`link-${id}`}>{label}</button>
               ))}
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
-              <Button onClick={()=>openAuth("signup")} className="shadow-md shadow-primary/20" data-testid="button-login">Get Started</Button>
+              <Button onClick={() => openAuth("signup")} className="shadow-md shadow-primary/20" data-testid="button-login">Get Started</Button>
             </div>
           </div>
         </div>
@@ -215,11 +221,11 @@ export default function Landing() {
       <section className="relative min-h-[90vh] flex items-center justify-center pt-16 overflow-hidden">
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
-        
+
         {/* Decorative elements */}
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse-gentle" />
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse-gentle" style={{ animationDelay: "1s" }} />
-        
+
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center max-w-4xl mx-auto">
             <div className="animate-fade-in-up">
@@ -228,30 +234,30 @@ export default function Landing() {
                 Ancient Wisdom, Modern Wellness
               </span>
             </div>
-            
+
             <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-6 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
               Discover Your Path to
               <span className="block gradient-text mt-2">Balanced Living</span>
             </h1>
-            
+
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-              Unlock personalized Ayurvedic meal plans tailored to your unique constitution. 
+              Unlock personalized Ayurvedic meal plans tailored to your unique constitution.
               Take our dosha assessment and transform your relationship with food.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
-              <Button 
-                size="lg" 
-                className="text-base px-8 gap-2" 
+              <Button
+                size="lg"
+                className="text-base px-8 gap-2"
                 onClick={() => openAuth("signup")}
                 data-testid="button-hero-cta"
               >
                 Start Your Journey
                 <ArrowRight className="w-4 h-4" />
               </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
+              <Button
+                size="lg"
+                variant="outline"
                 className="text-base px-8"
                 onClick={() => scrollToSection("how-it-works")}
                 data-testid="button-learn-more"
@@ -259,15 +265,15 @@ export default function Landing() {
                 Learn More
               </Button>
             </div>
-            
+
             {/* Stats */}
             <div className="flex flex-wrap justify-center gap-4 mt-16 animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
               {([
-                { value:"70+", label:"Foods Analyzed", sub:"All dosha types" },
-                { value:"10",  label:"Health Goals",   sub:"Targeted guidance" },
-                { value:"30",  label:"Quiz Questions", sub:"Science-backed" },
-                { value:"3",   label:"Dosha Types",    sub:"For every body" },
-              ] as const).map(s=>(
+                { value: "70+", label: "Foods Analyzed", sub: "All dosha types" },
+                { value: "10", label: "Health Goals", sub: "Targeted guidance" },
+                { value: "30", label: "Quiz Questions", sub: "Science-backed" },
+                { value: "3", label: "Dosha Types", sub: "For every body" },
+              ] as const).map(s => (
                 <div key={s.label} className="text-center px-6 py-5 rounded-2xl bg-card/70 border border-border/60 backdrop-blur-sm hover:bg-card hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-default min-w-[120px]">
                   <div className="text-4xl font-bold gradient-text-primary stat-number">{s.value}</div>
                   <div className="text-sm font-semibold text-foreground mt-1">{s.label}</div>
@@ -277,9 +283,9 @@ export default function Landing() {
             </div>
           </div>
         </div>
-        
+
         {/* Scroll indicator */}
-        <button 
+        <button
           onClick={() => scrollToSection("features")}
           className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-float"
           data-testid="button-scroll-down"
@@ -412,7 +418,7 @@ export default function Landing() {
               that govern their physical and mental characteristics.
             </p>
           </div>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="p-8 border-t-4 border-t-vata hover-elevate transition-all duration-300">
               <div className="flex items-center gap-3 mb-4">
@@ -427,7 +433,7 @@ export default function Landing() {
                 </div>
               </div>
               <p className="text-muted-foreground mb-4">
-                Governs movement and communication. Vata types are creative, quick-thinking, 
+                Governs movement and communication. Vata types are creative, quick-thinking,
                 and energetic with variable energy levels.
               </p>
               <div className="flex flex-wrap gap-2">
@@ -438,7 +444,7 @@ export default function Landing() {
                 ))}
               </div>
             </Card>
-            
+
             <Card className="p-8 border-t-4 border-t-pitta hover-elevate transition-all duration-300">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-pitta/20 rounded-full flex items-center justify-center">
@@ -452,7 +458,7 @@ export default function Landing() {
                 </div>
               </div>
               <p className="text-muted-foreground mb-4">
-                Governs metabolism and transformation. Pitta types are sharp-minded, ambitious, 
+                Governs metabolism and transformation. Pitta types are sharp-minded, ambitious,
                 and passionate with strong digestion.
               </p>
               <div className="flex flex-wrap gap-2">
@@ -463,7 +469,7 @@ export default function Landing() {
                 ))}
               </div>
             </Card>
-            
+
             <Card className="p-8 border-t-4 border-t-kapha hover-elevate transition-all duration-300">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-kapha/20 rounded-full flex items-center justify-center">
@@ -477,7 +483,7 @@ export default function Landing() {
                 </div>
               </div>
               <p className="text-muted-foreground mb-4">
-                Governs structure and stability. Kapha types are calm, steady, and nurturing 
+                Governs structure and stability. Kapha types are calm, steady, and nurturing
                 with excellent stamina and memory.
               </p>
               <div className="flex flex-wrap gap-2">
@@ -493,38 +499,40 @@ export default function Landing() {
       </section>
 
       {/* Testimonials */}
-      <section id="testimonials" className="py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-wider mb-4">
-              <Heart className="w-3.5 h-3.5" /> User Stories
-            </span>
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-3">Transforming Lives Through Ayurveda</h2>
-            <div className="section-divider" />
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {([
-              { name:"Priya Sharma", role:"Yoga Instructor", text:"Nivarana completely changed how I think about food. Understanding my Vata constitution helped me fix years of digestive issues naturally.", avatar:"PS" },
-              { name:"Arjun Mehta", role:"Software Engineer", text:"I was skeptical at first, but the dosha assessment was spot-on. My energy levels have improved dramatically following the food recommendations.", avatar:"AM" },
-              { name:"Deepa Nair", role:"Wellness Coach", text:"The personalized food lists are incredibly detailed. I now recommend Nivarana to all my clients as the starting point for Ayurvedic wellness.", avatar:"DN" },
-            ] as const).map(({name,role,text,avatar})=>(
-              <div key={name} className="card-hover p-8 rounded-2xl bg-card border border-border/60 flex flex-col gap-4">
-                <div className="flex gap-0.5 mb-1">
-                  {[1,2,3,4,5].map(i=><span key={i} className="text-accent text-base">★</span>)}
-                </div>
-                <p className="text-muted-foreground text-sm leading-relaxed flex-1 italic">"{text}"</p>
-                <div className="flex items-center gap-3 pt-4 border-t border-border/40">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-xs font-bold text-primary">{avatar}</div>
-                  <div>
-                    <div className="text-sm font-semibold">{name}</div>
-                    <div className="text-xs text-muted-foreground">{role}</div>
+      {feedbacks.length > 0 && (
+        <section id="testimonials" className="py-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-wider mb-4">
+                <Heart className="w-3.5 h-3.5" /> User Stories
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-3">Transforming Lives Through Ayurveda</h2>
+              <div className="section-divider" />
+            </div>
+            <div className="grid md:grid-cols-3 gap-8">
+              {feedbacks.map((f: any) => (
+                <div key={f.id} className="card-hover p-8 rounded-2xl bg-card border border-border/60 flex flex-col gap-4 relative group">
+                  <div className="flex gap-0.5 mb-1">
+                    {Array.from({ length: f.rating }).map((_, idx) => (
+                      <span key={idx} className="text-accent text-base">★</span>
+                    ))}
+                  </div>
+                  <p className="text-muted-foreground text-sm leading-relaxed flex-1 italic">"{f.text}"</p>
+                  <div className="flex items-center gap-3 pt-4 border-t border-border/40">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                      {(f.userName || "An").slice(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold">{f.userName}</div>
+                      <div className="text-xs text-muted-foreground">{f.userRole}</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="py-24 relative overflow-hidden">
@@ -543,10 +551,10 @@ export default function Landing() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" variant="secondary" className="text-base px-10 gap-2 shadow-xl"
-              onClick={()=>openAuth("signup")} data-testid="button-cta-signup">
+              onClick={() => openAuth("signup")} data-testid="button-cta-signup">
               Get Started Free <ArrowRight className="w-4 h-4" />
             </Button>
-            <button onClick={()=>scrollToSection("features")}
+            <button onClick={() => scrollToSection("features")}
               className="text-primary-foreground/80 hover:text-primary-foreground text-sm underline underline-offset-4 transition-colors">
               Explore features first
             </button>
@@ -572,16 +580,16 @@ export default function Landing() {
             <div>
               <h4 className="font-semibold text-sm mb-4">Platform</h4>
               <ul className="space-y-2.5">
-                {([{label:"Features",id:"features"},{label:"How It Works",id:"how-it-works"},{label:"The Doshas",id:"doshas"}] as const).map(({label,id})=>(
-                  <li key={id}><button onClick={()=>scrollToSection(id)} className="text-sm text-muted-foreground hover:text-foreground transition-colors">{label}</button></li>
+                {([{ label: "Features", id: "features" }, { label: "How It Works", id: "how-it-works" }, { label: "The Doshas", id: "doshas" }] as const).map(({ label, id }) => (
+                  <li key={id}><button onClick={() => scrollToSection(id)} className="text-sm text-muted-foreground hover:text-foreground transition-colors">{label}</button></li>
                 ))}
               </ul>
             </div>
             <div>
               <h4 className="font-semibold text-sm mb-4">Account</h4>
               <ul className="space-y-2.5">
-                <li><button onClick={()=>openAuth("signup")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Sign Up Free</button></li>
-                <li><button onClick={()=>openAuth("login")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Log In</button></li>
+                <li><button onClick={() => openAuth("signup")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Sign Up Free</button></li>
+                <li><button onClick={() => openAuth("login")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Log In</button></li>
               </ul>
             </div>
           </div>
@@ -647,27 +655,26 @@ export default function Landing() {
             <div className="flex-1 flex flex-col">
               {/* Tabs — only show for login/signup */}
               {authTab !== "forgot" && (
-              <div className="px-7 pt-7 pb-4">
-                <div className="relative grid grid-cols-2 rounded-2xl p-1 bg-muted/40 border border-border/50">
-                  {/* Sliding pill indicator */}
-                  <motion.div
-                    layout
-                    layoutId="tab-pill"
-                    className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-primary rounded-xl shadow-md"
-                    style={{ left: authTab === "login" ? "4px" : "calc(50%)" }}
-                    transition={{ type: "spring", stiffness: 400, damping: 35 }}
-                  />
-                  {(["login", "signup"] as const).map(tab => (
-                    <button key={tab} onClick={() => switchTab(tab, tab === "signup" ? 1 : -1)}
-                      className={`relative z-10 py-2.5 text-sm font-semibold rounded-xl transition-colors duration-200 ${
-                        authTab === tab ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                      }`}
-                      data-testid={`tab-${tab}`}>
-                      {tab === "login" ? "Log In" : "Sign Up"}
-                    </button>
-                  ))}
+                <div className="px-7 pt-7 pb-4">
+                  <div className="relative grid grid-cols-2 rounded-2xl p-1 bg-muted/40 border border-border/50">
+                    {/* Sliding pill indicator */}
+                    <motion.div
+                      layout
+                      layoutId="tab-pill"
+                      className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-primary rounded-xl shadow-md"
+                      style={{ left: authTab === "login" ? "4px" : "calc(50%)" }}
+                      transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                    />
+                    {(["login", "signup"] as const).map(tab => (
+                      <button key={tab} onClick={() => switchTab(tab, tab === "signup" ? 1 : -1)}
+                        className={`relative z-10 py-2.5 text-sm font-semibold rounded-xl transition-colors duration-200 ${authTab === tab ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        data-testid={`tab-${tab}`}>
+                        {tab === "login" ? "Log In" : "Sign Up"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
               )}
 
               <div className="flex-1">
@@ -751,7 +758,7 @@ export default function Landing() {
                       {signupPassword.length > 0 && (
                         <div className="space-y-1">
                           <div className="flex gap-1 h-1">
-                            {[1,2,3,4].map(i => (
+                            {[1, 2, 3, 4].map(i => (
                               <div key={i} className={`flex-1 rounded-full transition-all ${i <= passwordStrength ? strengthColor : "bg-muted"}`} />
                             ))}
                           </div>

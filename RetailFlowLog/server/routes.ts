@@ -21,10 +21,14 @@ import {
   insertDoshaAssessmentSchema,
   insertUserHealthGoalSchema,
   insertWellnessCheckinSchema,
+  insertFeedbackSchema,
   healthGoals,
   type HealthGoalKey
 } from "@shared/schema";
 import { z } from "zod";
+import { Resend } from "resend";
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export async function registerRoutes(
   httpServer: Server,
@@ -481,7 +485,7 @@ export async function registerRoutes(
   });
 
   // ====== Admin Routes ======
-  const FOOD_FILE = join(dirname(fileURLToPath(import.meta.url)), "data", "food_dataset.json");
+  const FOOD_FILE = join(process.cwd(), "server", "data", "food_dataset.json");
 
   const requireAdmin: RequestHandler = async (req: any, res, next) => {
     // Use the same userId field that isAuthenticated attaches to req
@@ -599,6 +603,175 @@ export async function registerRoutes(
   app.get("/api/admin/feedback", requireAdmin, async (_req, res) => {
     try { res.json(await storage.getAdminWellnessCheckins()); }
     catch { res.status(500).json({ message: "Failed" }); }
+  });
+
+  // ── Admin: reply to a specific wellness check-in note ──
+  app.post("/api/admin/checkins/:id/reply", requireAdmin, async (req, res) => {
+    try {
+      const checkinId = req.params.id;
+      const reply = typeof req.body.reply === "string" ? req.body.reply.trim() : "";
+      if (!reply) return res.status(400).json({ message: "Reply cannot be empty" });
+
+      const updated = await storage.replyToCheckin(checkinId, reply);
+      if (!updated) return res.status(404).json({ message: "Check-in not found" });
+
+      // Fetch user email to send notification
+      const user = await storage.getUser(updated.userId);
+      const userEmail = user?.email;
+      const userName = user?.firstName ?? "there";
+      const appUrl = process.env.APP_URL || "http://localhost:5000";
+
+      if (userEmail) {
+        const emailHtml = `
+          <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
+            <div style="text-align:center;margin-bottom:24px">
+              <span style="font-size:28px">🌿</span>
+              <h1 style="color:#16a34a;font-size:20px;margin:8px 0">NIVARANA</h1>
+            </div>
+            <h2 style="color:#111;font-size:18px;margin-bottom:8px">You have a message from your wellness coach</h2>
+            <p style="color:#555;font-size:14px;margin-bottom:20px">
+              Hi ${userName}, the Nivarana team reviewed your wellness check-in notes and left you a personal message:
+            </p>
+            <div style="background:#f0fdf4;border-left:4px solid #16a34a;padding:16px 20px;border-radius:8px;margin-bottom:24px">
+              <p style="color:#14532d;font-size:15px;margin:0;line-height:1.6">${reply}</p>
+            </div>
+            <a href="${appUrl}/dashboard" style="display:inline-block;background:#16a34a;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">
+              View on Dashboard
+            </a>
+            <p style="color:#aaa;font-size:12px;margin-top:24px">
+              You are receiving this because you submitted a wellness check-in on Nivarana.<br>
+              © ${new Date().getFullYear()} Nivarana · Ayurvedic Wellness Platform
+            </p>
+          </div>
+        `;
+
+        if (resend) {
+          await resend.emails.send({
+            from: "NIVARANA <onboarding@resend.dev>",
+            to: userEmail,
+            subject: "💬 A message from your Nivarana wellness coach",
+            html: emailHtml,
+          });
+        } else {
+          console.log(`\n[ADMIN REPLY] To: ${userEmail}\nMessage: ${reply}\n`);
+        }
+      }
+
+      res.json({ success: true, checkin: updated });
+    } catch (error) {
+      console.error("Admin reply error:", error);
+      res.status(500).json({ message: "Failed to send reply" });
+    }
+  });
+
+  // ── User: get unread admin replies as notifications ──
+  app.get("/api/notifications", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.userId;
+      const replies = await storage.getUnreadAdminReplies(userId);
+      const notifications = replies.map((c: any) => ({
+        id: c.id,           // checkin ID used as notification ID
+        type: "admin_reply",
+        title: "Message from your wellness coach",
+        message: c.adminReply,
+        checkinNumber: c.checkinNumber,
+        createdAt: c.adminRepliedAt,
+        isRead: false,
+      }));
+      res.json(notifications);
+    } catch (error) {
+      console.error("Notifications error:", error);
+      res.status(500).json({ message: "Failed" });
+    }
+  });
+
+  // ── User: mark admin reply as read ──
+  app.patch("/api/notifications/:id/read", isAuthenticated, async (req: any, res) => {
+    try {
+      const checkinId = req.params.id;
+      // Verify this checkin belongs to the requesting user
+      const checkins = await storage.getWellnessCheckins(req.userId);
+      const owned = checkins.find(c => c.id === checkinId);
+      if (!owned) return res.status(404).json({ message: "Not found" });
+      await storage.markAdminReplyRead(checkinId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Mark read error:", error);
+      res.status(500).json({ message: "Failed" });
+    }
+  });
+
+  // ====== Feedbacks API ======
+
+  // Public: get all feedbacks
+  app.get("/api/feedbacks", async (req, res) => {
+    try {
+      const list = await storage.getFeedbacks();
+      res.json(list);
+    } catch (error) {
+      console.error("Error fetching feedbacks:", error);
+      res.status(500).json({ message: "Failed to fetch feedbacks" });
+    }
+  });
+
+  // Authenticated: create a new feedback
+  app.post("/api/feedbacks", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.userId;
+      const parsed = insertFeedbackSchema.parse({
+        ...req.body,
+        userId,
+      });
+
+      const newFeedback = await storage.createFeedback(parsed);
+      res.json(newFeedback);
+    } catch (error) {
+      console.error("Error creating feedback:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create feedback" });
+    }
+  });
+
+  // Authenticated: delete a feedback
+  app.delete("/api/feedbacks/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.userId;
+      const feedbackId = req.params.id;
+
+      // Find the feedback to check ownership or admin status
+      const feedback = await storage.getFeedback(feedbackId);
+      if (!feedback) {
+        return res.status(404).json({ message: "Feedback not found" });
+      }
+
+      // Check if user is owner
+      let isOwner = feedback.userId === userId;
+
+      // Check if user is admin
+      const user = await storage.getUser(userId);
+      let isAdmin = false;
+      if (user?.email) {
+        const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+        if (adminEmail) {
+          isAdmin = user.email.toLowerCase() === adminEmail;
+        } else {
+          const first = await storage.getFirstUser();
+          isAdmin = !!first && first.email?.toLowerCase() === user.email.toLowerCase();
+        }
+      }
+
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({ message: "Forbidden: You cannot delete this feedback" });
+      }
+
+      const deleted = await storage.deleteFeedback(feedbackId);
+      res.json({ success: deleted });
+    } catch (error) {
+      console.error("Error deleting feedback:", error);
+      res.status(500).json({ message: "Failed to delete feedback" });
+    }
   });
 
   return httpServer;

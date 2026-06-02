@@ -1,11 +1,16 @@
-import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { motion } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { doshaDescriptions } from "@/lib/doshaQuestions";
@@ -29,6 +34,16 @@ import {
   HeartPulse,
   RotateCw,
   ShieldAlert,
+  Bell,
+  BellDot,
+  X,
+  CheckCheck,
+  Salad,
+  MessageCircle,
+  Lightbulb,
+  Heart as HeartIcon,
+  Trash2,
+  Star,
 } from "lucide-react";
 
 const doshaIcons = {
@@ -36,6 +51,388 @@ const doshaIcons = {
   pitta: Flame,
   kapha: Mountain,
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notification types & helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+type NotifType = "wellness" | "meal" | "admin" | "tip" | "milestone";
+
+interface Notif {
+  id: string;
+  type: NotifType;
+  title: string;
+  message: string;
+  time: string;        // ISO or relative
+  isRead: boolean;
+  link?: string;
+  dbId?: string;
+}
+
+const TYPE_META: Record<NotifType, { color: string; bg: string; icon: React.ElementType }> = {
+  wellness:  { color: "text-emerald-600",  bg: "bg-emerald-500/10 border-emerald-400/30",   icon: HeartPulse },
+  meal:      { color: "text-amber-600",    bg: "bg-amber-500/10 border-amber-400/30",       icon: Salad },
+  admin:     { color: "text-blue-600",     bg: "bg-blue-500/10 border-blue-400/30",         icon: MessageCircle },
+  tip:       { color: "text-violet-600",   bg: "bg-violet-500/10 border-violet-400/30",     icon: Lightbulb },
+  milestone: { color: "text-rose-600",     bg: "bg-rose-500/10 border-rose-400/30",         icon: TrendingUp },
+};
+
+const DAILY_TIPS = [
+  "Eat your largest meal at noon when your digestive fire (Agni) is strongest.",
+  "Sip warm water throughout the day to support digestion and detox.",
+  "Avoid cold drinks with meals — they dampen Agni and slow digestion.",
+  "Oil pulling for 5 minutes in the morning helps remove oral toxins (Ama).",
+  "Try Abhyanga (self-massage with warm oil) before your morning shower.",
+  "Eat in a calm environment — stress disrupts nutrient absorption.",
+  "Include all 6 tastes (sweet, sour, salty, pungent, bitter, astringent) daily.",
+  "Triphala taken at bedtime gently detoxes and balances all three doshas.",
+  "Walk for 10–15 minutes after dinner to stimulate digestion.",
+  "Go to bed before 10 PM — Kapha time promotes deep, restorative sleep.",
+];
+
+function getTodayTip(): string {
+  const day = new Date().getDay(); // 0–6
+  return DAILY_TIPS[day % DAILY_TIPS.length];
+}
+
+function daysSince(isoDate: string): number {
+  return Math.floor((Date.now() - new Date(isoDate).getTime()) / 86400000);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NotificationBell
+// ─────────────────────────────────────────────────────────────────────────────
+function NotificationBell({
+  checkins,
+  hasMealPlan,
+}: {
+  checkins: WellnessCheckin[];
+  hasMealPlan: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
+
+  // ── Persist read IDs in localStorage, capped to 50 recent entries ──
+  const [readIds, setReadIds] = useState<Set<string>>(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("niv_notif_read") || "[]") as string[];
+      // Only keep the 50 most-recent stored IDs to prevent unbounded growth
+      return new Set(stored.slice(-50));
+    } catch { return new Set(); }
+  });
+
+  const dropRef = useRef<HTMLDivElement>(null);
+
+  // ── Fetch unread database notifications ──
+  const { data: dbNotifs = [] } = useQuery<any[]>({
+    queryKey: ["/api/notifications"],
+    refetchInterval: 15000,
+  });
+
+  // ── Mutation to mark database notifications read ──
+  const markReadMutation = useMutation({
+    mutationFn: async (dbId: string) => {
+      const resp = await fetch(`/api/notifications/${dbId}/read`, {
+        method: "PATCH",
+      });
+      if (!resp.ok) throw new Error("Failed to mark read");
+      return resp.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/wellness-checkins"] });
+    },
+  });
+
+  // ── Map DB notifications to Notif format ──
+  const mappedDbNotifs = useMemo<Notif[]>(() => {
+    return dbNotifs.map((n: any) => ({
+      id: `admin-reply-${n.id}`,
+      dbId: n.id,
+      type: "admin",
+      title: n.title || "Coach Feedback",
+      message: n.message,
+      time: n.createdAt ? new Date(n.createdAt).toLocaleDateString() : "Just now",
+      isRead: false,
+      link: "/wellness-progress",
+    }));
+  }, [dbNotifs]);
+
+  // ── Build smart local notifications based on app state ──
+  const smartNotifs = useMemo<Notif[]>(() => {
+    const list: Notif[] = [];
+
+    // 1. Daily Ayurvedic tip — id is date-scoped so yesterday's read state doesn't carry over
+    const todayKey = new Date().toDateString();
+    list.push({
+      id: `tip-${todayKey}`,
+      type: "tip",
+      title: "Today's Ayurvedic Tip",
+      message: getTodayTip(),
+      time: "Today",
+      isRead: false,
+      link: "/foods",
+    });
+
+    // 2. Wellness check-in reminder
+    if (checkins.length === 0) {
+      list.push({
+        id: "wellness-first",
+        type: "wellness",
+        title: "Take Your Baseline Check-in",
+        message: "Record your wellness baseline to start tracking your Ayurvedic journey.",
+        time: "Action needed",
+        isRead: false,
+        link: "/wellness-checkin",
+      });
+    } else {
+      const last = checkins[checkins.length - 1];
+      const lastDate = last.createdAt ? String(last.createdAt) : "";
+      const days = lastDate ? daysSince(lastDate) : 0;
+      if (lastDate && days >= 7) {
+        list.push({
+          id: `wellness-reminder-${lastDate.slice(0, 10)}`,
+          type: "wellness",
+          title: "Time for a Wellness Re-evaluation",
+          message: `It's been ${days} days since your last check-in. See how your body has responded to your plan.`,
+          time: `${days}d ago`,
+          isRead: false,
+          link: "/wellness-checkin",
+        });
+      }
+    }
+
+    // 3. Milestone — 2+ check-ins with improvement
+    if (checkins.length >= 2) {
+      const first = checkins[0];
+      const latest = checkins[checkins.length - 1];
+      const delta = (latest.overallScore ?? 0) - (first.overallScore ?? 0);
+      if (delta > 0) {
+        list.push({
+          id: `milestone-${checkins.length}`,
+          type: "milestone",
+          title: `+${delta} Points Improvement! 🎉`,
+          message: `Your wellness score rose from ${first.overallScore} to ${latest.overallScore}/40 across ${checkins.length} check-ins. Keep going!`,
+          time: "Milestone",
+          isRead: false,
+          link: "/wellness-progress",
+        });
+      }
+    }
+
+    // 4. Meal plan prompt (only when no plan exists)
+    if (!hasMealPlan) {
+      list.push({
+        id: "meal-plan-prompt",
+        type: "meal",
+        title: "Generate Your Personalised Meal Plan",
+        message: "Your dosha-specific 7-day Ayurvedic meal plan is ready to be created.",
+        time: "Recommended",
+        isRead: false,
+        link: "/meal-plan",
+      });
+    }
+
+    return list;
+  }, [checkins, hasMealPlan]);
+
+  // Apply persisted read state and merge with DB notifications
+  const allNotifs = useMemo<Notif[]>(() => {
+    const localMapped = smartNotifs.map(n => ({ ...n, isRead: readIds.has(n.id) }));
+    const dbMapped = mappedDbNotifs.map(n => ({ ...n, isRead: readIds.has(n.id) }));
+    return [...dbMapped, ...localMapped];
+  }, [smartNotifs, mappedDbNotifs, readIds]);
+
+  const unread = allNotifs.filter(n => !n.isRead).length;
+
+  // ── Persist read IDs, trimmed to 50 entries ──
+  const persistRead = useCallback((next: Set<string>) => {
+    try {
+      const arr = [...next].slice(-50);
+      localStorage.setItem("niv_notif_read", JSON.stringify(arr));
+    } catch { }
+  }, []);
+
+  const markRead = useCallback((id: string) => {
+    setReadIds(prev => {
+      const next = new Set(prev);
+      next.add(id);
+      persistRead(next);
+      return next;
+    });
+  }, [persistRead]);
+
+  const markAll = useCallback(() => {
+    setReadIds(prev => {
+      const next = new Set(prev);
+      smartNotifs.forEach(n => next.add(n.id));
+      mappedDbNotifs.forEach(n => next.add(n.id));
+      persistRead(next);
+      return next;
+    });
+    // Mark database notifications read as well
+    mappedDbNotifs.forEach(n => {
+      if (n.dbId) {
+        markReadMutation.mutate(n.dbId);
+      }
+    });
+  }, [smartNotifs, mappedDbNotifs, persistRead, markReadMutation]);
+
+  // ── Navigate within SPA using wouter (no full-page reload) ──
+  const handleClick = useCallback((n: Notif) => {
+    if (n.dbId) {
+      markRead(n.id); // Add to local readIds optimistically
+      markReadMutation.mutate(n.dbId);
+    } else {
+      markRead(n.id);
+    }
+    if (n.link) {
+      setOpen(false);
+      navigate(n.link);
+    }
+  }, [markRead, navigate, markReadMutation]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    if (open) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={dropRef}>
+      {/* Accessible live region — announces unread count to screen readers */}
+      <span aria-live="polite" aria-atomic="true" className="sr-only">
+        {unread > 0 ? `${unread} unread notification${unread > 1 ? "s" : ""}` : ""}
+      </span>
+
+      {/* Bell button */}
+      <button
+        id="notification-bell"
+        onClick={() => setOpen(v => !v)}
+        className="relative w-9 h-9 rounded-xl flex items-center justify-center hover:bg-primary/10 transition-all duration-200"
+        aria-label={`Notifications${unread > 0 ? `, ${unread} unread` : ""}`}
+        aria-expanded={open}
+        aria-haspopup="true"
+      >
+        {unread > 0
+          ? <BellDot className="w-5 h-5 text-primary" />
+          : <Bell className="w-5 h-5 text-muted-foreground" />}
+        {unread > 0 && (
+          <motion.span
+            key={unread}
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-0.5 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center shadow-sm"
+          >
+            {unread > 9 ? "9+" : unread}
+          </motion.span>
+        )}
+      </button>
+
+      {/* Dropdown */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            role="dialog"
+            aria-label="Notifications panel"
+            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.97 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="absolute right-0 top-12 w-[340px] bg-background border border-border rounded-2xl shadow-2xl shadow-black/15 z-50 overflow-hidden"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border/60">
+              <div className="flex items-center gap-2">
+                <Bell className="w-4 h-4 text-primary" />
+                <span className="font-semibold text-sm">Notifications</span>
+                {unread > 0 && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                    {unread} new
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                {unread > 0 && (
+                  <button
+                    onClick={markAll}
+                    className="text-[10px] text-primary hover:underline flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-primary/5 transition-colors"
+                  >
+                    <CheckCheck className="w-3 h-3" /> Mark all read
+                  </button>
+                )}
+                <button
+                  onClick={() => setOpen(false)}
+                  className="p-1.5 rounded-lg hover:bg-muted/60 transition-colors"
+                  aria-label="Close notifications"
+                >
+                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+              </div>
+            </div>
+
+            {/* Notifications list with staggered entrance */}
+            <div className="max-h-[400px] overflow-y-auto divide-y divide-border/40">
+              {allNotifs.length === 0 && (
+                <div className="py-12 text-center">
+                  <Bell className="w-10 h-10 mx-auto mb-3 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">You're all caught up!</p>
+                </div>
+              )}
+              {allNotifs.map((n, i) => {
+                const meta = TYPE_META[n.type];
+                const Icon = meta.icon;
+                return (
+                  <motion.div
+                    key={n.id}
+                    initial={{ opacity: 0, x: -6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.04, duration: 0.2 }}
+                    onClick={() => handleClick(n)}
+                    className={`flex gap-3 px-4 py-3.5 cursor-pointer hover:bg-muted/40 transition-colors ${
+                      !n.isRead ? "bg-primary/[0.025]" : ""
+                    }`}
+                  >
+                    {/* Coloured icon badge */}
+                    <div className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 mt-0.5 ${meta.bg}`}>
+                      <Icon className={`w-4 h-4 ${meta.color}`} />
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className={`text-sm font-semibold leading-tight ${
+                          !n.isRead ? "text-foreground" : "text-muted-foreground"
+                        }`}>{n.title}</p>
+                        {!n.isRead && (
+                          <span className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5 animate-pulse" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
+                        {n.message}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/50 mt-1">{n.time}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-2.5 border-t border-border/40 bg-muted/20 flex items-center justify-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <p className="text-[10px] text-muted-foreground">Live · personalised to your journey</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -53,6 +450,13 @@ const itemVariants = {
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { user, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
+  const [promptShown, setPromptShown] = useState(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("niv_wellness_prompt_shown") === "true";
+    }
+    return false;
+  });
 
   const { data: profile, isLoading: profileLoading } = useQuery<UserProfile>({
     queryKey: ["/api/profile"],
@@ -64,6 +468,82 @@ export default function Dashboard() {
 
   const { data: wellnessCheckins = [] } = useQuery<WellnessCheckin[]>({
     queryKey: ["/api/wellness-checkins"],
+  });
+
+  // ── Real meal-plan check: query the saved plan for "balanced" goal ──
+  const { data: savedMealPlan } = useQuery<any>({
+    queryKey: ["/api/mealplan/saved"],
+    retry: false,
+  });
+  const hasMealPlan = !!savedMealPlan;
+
+  const queryClient = useQueryClient();
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [feedbackRole, setFeedbackRole] = useState("");
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackName, setFeedbackName] = useState("");
+
+  // Initialize feedback name when user is loaded
+  useEffect(() => {
+    if (user && !feedbackName) {
+      setFeedbackName(`${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "");
+    }
+  }, [user, feedbackName]);
+
+  const { data: feedbacks = [] } = useQuery<any[]>({
+    queryKey: ["/api/feedbacks"],
+  });
+
+  const submitFeedbackMutation = useMutation({
+    mutationFn: async (data: { rating: number; userName: string; userRole: string; text: string }) => {
+      const res = await fetch("/api/feedbacks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to submit feedback");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/feedbacks"] });
+      toast({
+        title: "Feedback submitted!",
+        description: "Thank you for sharing your story.",
+      });
+      setShowFeedbackDialog(false);
+      setFeedbackRating(5);
+      setFeedbackText("");
+      setFeedbackRole("");
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Failed to submit feedback",
+        description: err.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteFeedbackMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/feedbacks/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete feedback");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/feedbacks"] });
+      toast({
+        title: "Feedback deleted",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Failed to delete feedback",
+        description: err.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const isLoading = authLoading || profileLoading || assessmentLoading;
@@ -98,6 +578,44 @@ export default function Dashboard() {
     }
   }, [needsOnboarding, profileLoading, setLocation]);
 
+  useEffect(() => {
+    if (isLoading || needsOnboarding || promptShown) {
+      return;
+    }
+
+    const lastCheckin = wellnessCheckins.length > 0 ? wellnessCheckins[wellnessCheckins.length - 1] : undefined;
+    const lastDate = lastCheckin?.createdAt ? String(lastCheckin.createdAt) : "";
+    const days = lastDate ? daysSince(lastDate) : 0;
+    const noCheckinsOrOver14Days = wellnessCheckins.length === 0 || days > 14;
+
+    if (needsAssessment || noCheckinsOrOver14Days) {
+      const redirectLink = needsAssessment ? "/quiz" : "/wellness-checkin";
+      toast({
+        title: "Wellness Re-check Recommended",
+        description: "Your body constitution changes with seasons. Time for a wellness re-check!",
+        action: (
+          <ToastAction
+            altText="Check-in"
+            onClick={() => setLocation(redirectLink)}
+          >
+            Check-in
+          </ToastAction>
+        ),
+      });
+
+      sessionStorage.setItem("niv_wellness_prompt_shown", "true");
+      setPromptShown(true);
+    }
+  }, [
+    isLoading,
+    needsOnboarding,
+    promptShown,
+    needsAssessment,
+    wellnessCheckins,
+    toast,
+    setLocation,
+  ]);
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Ambient background decorations */}
@@ -122,6 +640,10 @@ export default function Dashboard() {
 
             <div className="flex items-center gap-2">
               <ThemeToggle />
+              <NotificationBell
+                checkins={wellnessCheckins}
+                hasMealPlan={hasMealPlan}
+              />
               {user && (
                 <div className="flex items-center gap-2 pl-2 ml-1 border-l border-border/40">
                   <Avatar className="h-9 w-9 ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
@@ -629,6 +1151,141 @@ export default function Dashboard() {
             </Card>
           </motion.div>
         )}
+
+        {/* User Stories / Platform Feedback Section */}
+        <motion.div variants={itemVariants} className="mt-12">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight">User Stories & Feedback</h2>
+              <div className="h-px w-24 sm:w-48 bg-gradient-to-r from-primary/30 via-border/50 to-transparent" />
+            </div>
+            <Dialog open={showFeedbackDialog} onOpenChange={setShowFeedbackDialog}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 shadow-md shadow-primary/20">
+                  <HeartIcon className="w-4 h-4" /> Share Your Story
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md p-6 rounded-3xl border-0" style={{ boxShadow: "0 20px 50px rgba(0,0,0,0.3)" }}>
+                <DialogHeader>
+                  <DialogTitle className="font-serif text-2xl font-bold">Share Your Story</DialogTitle>
+                </DialogHeader>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!feedbackText.trim() || !feedbackName.trim() || !feedbackRole.trim()) return;
+                    submitFeedbackMutation.mutate({
+                      rating: feedbackRating,
+                      userName: feedbackName.trim(),
+                      userRole: feedbackRole.trim(),
+                      text: feedbackText.trim(),
+                    });
+                  }}
+                  className="space-y-4 mt-2"
+                >
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Your Name</label>
+                    <Input
+                      value={feedbackName}
+                      onChange={(e) => setFeedbackName(e.target.value)}
+                      placeholder="e.g. Priyal Sharma"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Occupation / Role</label>
+                    <Input
+                      value={feedbackRole}
+                      onChange={(e) => setFeedbackRole(e.target.value)}
+                      placeholder="e.g. Yoga Instructor, Doctor"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium block">Rating</label>
+                    <div className="flex gap-1.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setFeedbackRating(star)}
+                          className="focus:outline-none"
+                        >
+                          <Star
+                            className={`w-7 h-7 ${
+                              star <= feedbackRating ? "fill-accent text-accent" : "text-muted-foreground"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Your Story / Feedback</label>
+                    <Textarea
+                      value={feedbackText}
+                      onChange={(e) => setFeedbackText(e.target.value)}
+                      placeholder="Tell us about your wellness journey with Nivarana..."
+                      rows={4}
+                      maxLength={1000}
+                      required
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full gap-2 font-semibold shadow-lg shadow-primary/20"
+                    disabled={submitFeedbackMutation.isPending}
+                  >
+                    {submitFeedbackMutation.isPending ? "Submitting..." : "Submit Feedback"}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {feedbacks.length === 0 ? (
+            <Card className="bg-gray-50/80 dark:bg-gray-900/40 backdrop-blur-md border-2 border-gray-200 dark:border-gray-700 text-center p-8">
+              <CardContent className="space-y-3 pt-6">
+                <HeartIcon className="w-10 h-10 text-primary/40 mx-auto" />
+                <p className="text-muted-foreground text-sm">No feedback shared yet. Be the first to share your story!</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-6">
+              {feedbacks.map((f: any) => {
+                const canDelete = user && (user.id === f.userId || (user as any).isAdmin);
+                return (
+                  <Card key={f.id} className="bg-gray-50/80 dark:bg-gray-900/40 backdrop-blur-md border-2 border-gray-200 dark:border-gray-700 p-6 flex flex-col gap-4 relative group hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
+                    {canDelete && (
+                      <button
+                        onClick={() => deleteFeedbackMutation.mutate(f.id)}
+                        disabled={deleteFeedbackMutation.isPending}
+                        className="absolute top-4 right-4 p-1.5 rounded-lg bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20"
+                        title="Delete feedback"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                    <div className="flex gap-0.5">
+                      {Array.from({ length: f.rating }).map((_, idx) => (
+                        <span key={idx} className="text-accent text-sm">★</span>
+                      ))}
+                    </div>
+                    <p className="text-muted-foreground text-sm leading-relaxed flex-1 italic">"{f.text}"</p>
+                    <div className="flex items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
+                      <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                        {(f.userName || "An").slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-foreground">{f.userName}</div>
+                        <div className="text-[10px] text-muted-foreground">{f.userRole}</div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </motion.div>
       </motion.main>
     </div>
   );

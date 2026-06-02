@@ -10,7 +10,7 @@ import {
   Users, MessageSquare, Leaf, BarChart3,
   ChevronDown, ChevronUp, Trash2, Plus,
   ArrowLeft, Search, ShieldAlert, CheckCircle, XCircle,
-  Download, Star, Activity,
+  Download, Activity, Send, Reply, Heart,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { healthGoals } from "@shared/schema";
@@ -157,20 +157,48 @@ const MARKER_LABELS: Record<string, string> = {
   mentalClarity: "Mental Clarity", skinHealth: "Skin Health", immunity: "Immunity", calmness: "Calmness",
 };
 
-function ScoreDot({ val }: { val: number }) {
-  const color = val >= 4 ? "bg-emerald-500" : val === 3 ? "bg-amber-400" : "bg-red-400";
-  return <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-[10px] font-bold ${color}`}>{val}</span>;
-}
-
 function FeedbackTab() {
   const [search, setSearch] = useState("");
-  const [expanded, setExpanded] = useState<number | null>(null);
-  // Filter to show only entries with notes first (most actionable for admin)
+  const [expanded, setExpanded] = useState<string | null>(null);
   const [notesOnly, setNotesOnly] = useState(false);
+  const [replyText, setReplyText] = useState<Record<string, string>>({});
+  const qc = useQueryClient();
 
   const { data: checkins = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/feedback"],
     retry: false,
+  });
+
+  const { data: feedbacks = [] } = useQuery<any[]>({
+    queryKey: ["/api/feedbacks"],
+  });
+
+  const deleteFeedbackMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/feedbacks/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete feedback");
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/feedbacks"] });
+    },
+  });
+
+  const replyMutation = useMutation({
+    mutationFn: async ({ checkinId, reply }: { checkinId: string; reply: string }) => {
+      const res = await fetch(`/api/admin/checkins/${checkinId}/reply`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reply }),
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.message); }
+      return res.json();
+    },
+    onSuccess: (_data, { checkinId }) => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/feedback"] });
+      setReplyText(prev => ({ ...prev, [checkinId]: "" }));
+    },
   });
 
   const filtered = checkins.filter(c => {
@@ -191,12 +219,11 @@ function FeedbackTab() {
     <div className="space-y-4">
       <div className="flex items-center gap-3 flex-wrap">
         <SearchBar value={search} onChange={setSearch} placeholder="Search by name, email or note content…" className="flex-1" />
-        {/* Quick filter — only show entries with notes/observations */}
         <button
           onClick={() => setNotesOnly(v => !v)}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${notesOnly
-              ? "bg-amber-500/10 border-amber-400/40 text-amber-700 dark:text-amber-400"
-              : "border-border text-muted-foreground hover:bg-muted/50"
+            ? "bg-amber-500/10 border-amber-400/40 text-amber-700 dark:text-amber-400"
+            : "border-border text-muted-foreground hover:bg-muted/50"
             }`}
         >
           📝 With notes ({withNotes})
@@ -207,8 +234,7 @@ function FeedbackTab() {
 
       <div className="space-y-2">
         {filtered.map((c) => (
-          <Card key={c.id} className={`overflow-hidden ${c.notes ? "ring-1 ring-amber-400/30" : ""
-            }`}>
+          <Card key={c.id} className={`overflow-hidden ${c.notes ? "ring-1 ring-amber-400/30" : ""} ${c.adminReply ? "ring-1 ring-blue-400/20" : ""}`}>
             <button
               className="w-full px-5 py-4 flex items-start justify-between gap-4 hover:bg-muted/30 transition-colors text-left"
               onClick={() => setExpanded(expanded === c.id ? null : c.id)}
@@ -219,23 +245,26 @@ function FeedbackTab() {
                   {c.userName && <p className="text-xs text-muted-foreground">{c.userEmail}</p>}
                   <Badge variant="outline" className="text-[10px]">Check-in #{c.checkinNumber}</Badge>
                   <Badge variant="outline" className={`text-[10px] ${c.overallScore >= 32 ? "border-emerald-400 text-emerald-600" :
-                      c.overallScore >= 24 ? "border-amber-400 text-amber-600" :
-                        "border-red-400 text-red-500"
+                    c.overallScore >= 24 ? "border-amber-400 text-amber-600" :
+                      "border-red-400 text-red-500"
                     }`}>
                     Score {c.overallScore}/40
                   </Badge>
-                  {/* 📝 badge — visible without expanding so admin sees it immediately */}
                   {c.notes && (
                     <Badge className="text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-400/30">
                       📝 Note
                     </Badge>
                   )}
+                  {c.adminReply && (
+                    <Badge className="text-[10px] bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-400/30">
+                      💬 Replied
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">{fmtDate(c.createdAt)}</p>
-                {/* Show note preview even when collapsed */}
                 {c.notes && expanded !== c.id && (
                   <p className="text-xs text-amber-800 dark:text-amber-300 mt-1.5 italic line-clamp-1">
-                    “{c.notes}”
+                    "{c.notes}"
                   </p>
                 )}
               </div>
@@ -257,23 +286,110 @@ function FeedbackTab() {
                   ))}
                 </div>
 
-                {/* User's observation / note — prominent box */}
+                {/* User's observation note */}
                 {c.notes ? (
                   <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-300/40">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-1.5 flex items-center gap-1">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-1.5">
                       📝 User Observation
                     </p>
-                    <p className="text-sm text-amber-900 dark:text-amber-200 leading-relaxed">
-                      {c.notes}
-                    </p>
+                    <p className="text-sm text-amber-900 dark:text-amber-200 leading-relaxed">{c.notes}</p>
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground italic">No additional notes from user.</p>
+                )}
+
+                {/* Admin reply — existing reply or new input */}
+                {c.adminReply ? (
+                  <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-300/40">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 flex items-center gap-1">
+                        <Reply className="w-3 h-3" /> Your Reply
+                      </p>
+                      <span className="text-[10px] text-blue-500/70">{fmtDate(c.adminRepliedAt)}</span>
+                    </div>
+                    <p className="text-sm text-blue-900 dark:text-blue-200 leading-relaxed">{c.adminReply}</p>
+                    <div className="mt-3 flex gap-2">
+                      <textarea
+                        rows={2}
+                        placeholder="Update your reply…"
+                        value={replyText[c.id] ?? ""}
+                        onChange={e => setReplyText(prev => ({ ...prev, [c.id]: e.target.value }))}
+                        className="flex-1 text-xs rounded-lg border border-blue-200 dark:border-blue-800 bg-background px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400"
+                      />
+                      <button
+                        onClick={() => replyMutation.mutate({ checkinId: c.id, reply: replyText[c.id] ?? "" })}
+                        disabled={!replyText[c.id]?.trim() || replyMutation.isPending}
+                        className="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-blue-700 transition-colors disabled:opacity-40"
+                      >
+                        <Send className="w-3 h-3" /> Update & Resend
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-muted/30 border border-border/60">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
+                      <Reply className="w-3 h-3" /> Reply to user
+                    </p>
+                    <div className="flex gap-2">
+                      <textarea
+                        rows={3}
+                        placeholder="Write a personalised response to this check-in note… User will be notified by email and in-app."
+                        value={replyText[c.id] ?? ""}
+                        onChange={e => setReplyText(prev => ({ ...prev, [c.id]: e.target.value }))}
+                        className="flex-1 text-sm rounded-lg border border-border bg-background px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                      <button
+                        onClick={() => replyMutation.mutate({ checkinId: c.id, reply: replyText[c.id] ?? "" })}
+                        disabled={!replyText[c.id]?.trim() || replyMutation.isPending}
+                        className="px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold flex flex-col items-center justify-center gap-1 hover:bg-primary/90 transition-colors disabled:opacity-40 min-w-[68px]"
+                      >
+                        <Send className="w-4 h-4" />
+                        <span className="text-[10px]">{replyMutation.isPending ? "…" : "Send"}</span>
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1.5">
+                      ✉️ User will receive an email + in-app notification.
+                    </p>
+                  </div>
                 )}
               </div>
             )}
           </Card>
         ))}
+      </div>
+
+      <div className="pt-6 border-t mt-6 space-y-4">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <Heart className="w-5 h-5 text-primary" /> Platform Feedbacks (User Stories)
+        </h3>
+        {feedbacks.length === 0 ? (
+          <EmptyState text="No platform feedbacks submitted yet." />
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4">
+            {feedbacks.map((f: any) => (
+              <Card key={f.id} className="p-4 relative group">
+                <button
+                  onClick={() => deleteFeedbackMutation.mutate(f.id)}
+                  disabled={deleteFeedbackMutation.isPending}
+                  className="absolute top-4 right-4 p-1.5 rounded-lg bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20"
+                  title="Delete feedback"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <div className="flex gap-0.5 mb-2">
+                  {Array.from({ length: f.rating }).map((_, i) => (
+                    <span key={i} className="text-accent text-xs">★</span>
+                  ))}
+                </div>
+                <p className="text-sm italic text-muted-foreground mb-3">"{f.text}"</p>
+                <div className="flex items-center gap-2 pt-2 border-t text-xs">
+                  <div className="font-semibold">{f.userName}</div>
+                  <div className="text-muted-foreground">({f.userRole})</div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -321,8 +437,8 @@ function ConversationsTab() {
                   {c.messages?.map((m: any) => (
                     <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${m.role === "user"
-                          ? "bg-primary text-primary-foreground rounded-br-sm"
-                          : "bg-muted text-foreground rounded-bl-sm"
+                        ? "bg-primary text-primary-foreground rounded-br-sm"
+                        : "bg-muted text-foreground rounded-bl-sm"
                         }`}>
                         <p className="text-[10px] opacity-60 mb-1 font-medium uppercase tracking-wide">{m.role}</p>
                         {m.content}
@@ -590,12 +706,26 @@ function DoshaBadge({ dosha }: { dosha: string }) {
   return <Badge variant="outline" className={`capitalize ${colors[dosha] ?? ""}`}>{dosha}</Badge>;
 }
 
+
 function EffectBadge({ effect }: { effect: string }) {
   const cls =
     effect === "favourable" ? "border-green-400 text-green-600 dark:text-green-400" :
       effect === "unfavourable" ? "border-red-400 text-red-500 dark:text-red-400" : "";
   return <Badge variant="outline" className={`capitalize text-xs ${cls}`}>{effect ?? "—"}</Badge>;
 }
+
+function ScoreDot({ val }: { val: number }) {
+  const cls =
+    val >= 4 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-400/30" :
+      val === 3 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-400/30" :
+        "bg-red-500/10 text-red-500 dark:text-red-400 border-red-400/30";
+  return (
+    <span className={`w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-bold ${cls}`}>
+      {val}
+    </span>
+  );
+}
+
 
 function Spinner() {
   return <div className="py-10 text-center text-sm text-muted-foreground">Loading…</div>;
@@ -664,8 +794,8 @@ export default function Admin() {
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === t.id
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                 }`}
             >
               <t.icon className="w-4 h-4" />

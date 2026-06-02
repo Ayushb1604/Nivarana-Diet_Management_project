@@ -116,29 +116,29 @@ function downloadMealPlanPDF(plan: AIMealPlan) {
 
   // ── Palette ──────────────────────────────────────────────────────────────
   const C = {
-    green:      [39, 110, 53]  as [number,number,number],
-    greenLight: [220, 237, 222] as [number,number,number],
-    dark:       [28,  28,  28]  as [number,number,number],
-    mid:        [80,  80,  80]  as [number,number,number],
-    muted:      [140, 140, 140] as [number,number,number],
-    pageBg:     [252, 252, 250] as [number,number,number],
-    cardBg:     [255, 255, 255] as [number,number,number],
-    rule:       [220, 220, 215] as [number,number,number],
+    green: [39, 110, 53] as [number, number, number],
+    greenLight: [220, 237, 222] as [number, number, number],
+    dark: [28, 28, 28] as [number, number, number],
+    mid: [80, 80, 80] as [number, number, number],
+    muted: [140, 140, 140] as [number, number, number],
+    pageBg: [252, 252, 250] as [number, number, number],
+    cardBg: [255, 255, 255] as [number, number, number],
+    rule: [220, 220, 215] as [number, number, number],
   };
 
-  const MEAL_ACCENT: Record<string, [number,number,number]> = {
-    breakfast:     [234, 170,  30],
-    morning_snack: [52,  168, 104],
-    lunch:         [30,  140, 220],
-    evening_snack: [220, 120,  30],
-    dinner:        [120,  70, 200],
+  const MEAL_ACCENT: Record<string, [number, number, number]> = {
+    breakfast: [234, 170, 30],
+    morning_snack: [52, 168, 104],
+    lunch: [30, 140, 220],
+    evening_snack: [220, 120, 30],
+    dinner: [120, 70, 200],
   };
   const MEAL_LABEL: Record<string, string> = {
-    breakfast:     "Breakfast",
+    breakfast: "Breakfast",
     morning_snack: "Morning Snack",
-    lunch:         "Lunch",
+    lunch: "Lunch",
     evening_snack: "Evening Snack",
-    dinner:        "Dinner",
+    dinner: "Dinner",
   };
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -151,7 +151,7 @@ function downloadMealPlanPDF(plan: AIMealPlan) {
     return doc.splitTextToSize(text || "", width);
   }
 
-  function fillRect(x: number, ry: number, w: number, h: number, color: [number,number,number], r = 0) {
+  function fillRect(x: number, ry: number, w: number, h: number, color: [number, number, number], r = 0) {
     doc.setFillColor(...color);
     if (r > 0) doc.roundedRect(x, ry, w, h, r, r, "F");
     else doc.rect(x, ry, w, h, "F");
@@ -230,12 +230,12 @@ function downloadMealPlanPDF(plan: AIMealPlan) {
   const colW2 = (cW - 6) / 2;
 
   fillRect(M, y, colW2, 1, C.greenLight); // will size dynamically
-  const hydLines  = wrap(plan.hydration,       colW2 - 8, 9);
+  const hydLines = wrap(plan.hydration, colW2 - 8, 9);
   const stratLines = wrap(plan.weekly_strategy, colW2 - 8, 9);
   const boxH = Math.max(hydLines.length, stratLines.length) * LH(9) + 22;
 
-  fillRect(M,           y, colW2, boxH, C.greenLight, 3);
-  fillRect(M + colW2 + 6, y, colW2, boxH, [232, 245, 233] as [number,number,number], 3);
+  fillRect(M, y, colW2, boxH, C.greenLight, 3);
+  fillRect(M + colW2 + 6, y, colW2, boxH, [232, 245, 233] as [number, number, number], 3);
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7.5);
@@ -260,8 +260,8 @@ function downloadMealPlanPDF(plan: AIMealPlan) {
   if (plan.clinician_note) {
     const noteLines = wrap(plan.clinician_note, cW - 10, 9);
     const noteH = noteLines.length * LH(9) + 18;
-    fillRect(M, y, cW, noteH, [255, 248, 225] as [number,number,number], 3);
-    fillRect(M, y, 3, noteH, [230, 81, 0] as [number,number,number], 1);
+    fillRect(M, y, cW, noteH, [255, 248, 225] as [number, number, number], 3);
+    fillRect(M, y, 3, noteH, [230, 81, 0] as [number, number, number], 1);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7.5);
     doc.setTextColor(180, 60, 0);
@@ -276,7 +276,7 @@ function downloadMealPlanPDF(plan: AIMealPlan) {
   footer(1);
 
   // ── DAY PAGES ─────────────────────────────────────────────────────────────
-  const mealOrder = ["breakfast","morning_snack","lunch","evening_snack","dinner"] as const;
+  const mealOrder = ["breakfast", "morning_snack", "lunch", "evening_snack", "dinner"] as const;
 
   for (const dayPlan of plan.days) {
     doc.addPage();
@@ -300,25 +300,25 @@ function downloadMealPlanPDF(plan: AIMealPlan) {
       if (!meal) continue;
 
       const accent = MEAL_ACCENT[mealKey] ?? C.green;
-      const label  = MEAL_LABEL[mealKey]  ?? mealKey;
+      const label = MEAL_LABEL[mealKey] ?? mealKey;
 
       // Pre-calculate all wrapped lines
-      const nameLines = wrap(meal.dish_name,                    cW - 10,   12);
-      const ingLines  = wrap(meal.ingredients.join(", "),       cW - 10,    9);
-      const whyLines  = wrap(meal.why,                          cW - 10,    9);
-      const portLine  = `${meal.portion}  ·  ${meal.macros.calories}`;
+      const nameLines = wrap(meal.dish_name, cW - 10, 12);
+      const ingLines = wrap(meal.ingredients.join(", "), cW - 10, 9);
+      const whyLines = wrap(meal.why, cW - 10, 9);
+      const portLine = `${meal.portion}  ·  ${meal.macros.calories}`;
 
       const cardH =
         3 +                              // accent bar
         6 +                              // label pill row
         4 +                              // gap
-        nameLines.length  * LH(12) + 2 + // dish name
+        nameLines.length * LH(12) + 2 + // dish name
         LH(9) + 3 +                      // portion + cal
         9 +                              // macros row
         6 +                              // "Ingredients" label
-        ingLines.length   * LH(9) + 5 +  // ingredients
+        ingLines.length * LH(9) + 5 +  // ingredients
         6 +                              // "Why" label
-        whyLines.length   * LH(9) + 10;  // why + bottom padding
+        whyLines.length * LH(9) + 10;  // why + bottom padding
 
       needPage(cardH);
 
@@ -357,9 +357,9 @@ function downloadMealPlanPDF(plan: AIMealPlan) {
 
       // Macro pills
       const macros = [
-        { label: "Protein", value: meal.macros.protein,  bg: [232, 244, 254] as [number,number,number] },
-        { label: "Carbs",   value: meal.macros.carbs,    bg: [255, 248, 225] as [number,number,number] },
-        { label: "Fat",     value: meal.macros.fat,      bg: [254, 235, 235] as [number,number,number] },
+        { label: "Protein", value: meal.macros.protein, bg: [232, 244, 254] as [number, number, number] },
+        { label: "Carbs", value: meal.macros.carbs, bg: [255, 248, 225] as [number, number, number] },
+        { label: "Fat", value: meal.macros.fat, bg: [254, 235, 235] as [number, number, number] },
       ];
       const pillW = (cW - 28) / 3;
       macros.forEach(({ label: ml, value, bg }, i) => {
@@ -535,13 +535,12 @@ function FoodCard({ food, tier }: { food: Food; tier: keyof typeof tierInfo }) {
                     <span className="text-[10px] font-bold uppercase tracking-tighter opacity-60">{dosha}</span>
                     <Badge
                       variant="outline"
-                      className={`text-[10px] border-none px-1.5 h-5 flex items-center justify-center ${
-                        effect === "favourable"
+                      className={`text-[10px] border-none px-1.5 h-5 flex items-center justify-center ${effect === "favourable"
                           ? "bg-emerald-500/10 text-emerald-500"
                           : effect === "neutral"
-                          ? "bg-amber-500/10 text-amber-500"
-                          : "bg-rose-500/10 text-rose-500"
-                      }`}
+                            ? "bg-amber-500/10 text-amber-500"
+                            : "bg-rose-500/10 text-rose-500"
+                        }`}
                     >
                       {effect}
                     </Badge>
@@ -1009,7 +1008,7 @@ export default function FoodList() {
     fetch(`/api/mealplan/saved?goal=${goal}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (data) setMealPlan(data as AIMealPlan); })
-      .catch(() => {});
+      .catch(() => { });
   }, [goalParam]);
 
   const { data: tieredFoods, isLoading } = useQuery<TieredFoods>({
@@ -1355,8 +1354,8 @@ export default function FoodList() {
                   {selectedMeal
                     ? mealPlan?.days[selectedDay]?.meals[selectedMeal]?.dish_name
                     : mealPlan
-                    ? `${mealPlan.days[selectedDay]?.day_name} — tap any meal for full details`
-                    : "Loading…"}
+                      ? `${mealPlan.days[selectedDay]?.day_name} — tap any meal for full details`
+                      : "Loading…"}
                 </DialogDescription>
               </div>
             </div>
@@ -1365,19 +1364,18 @@ export default function FoodList() {
             {mealPlan && selectedMeal === null && (
               <div className="border-b border-border/30 bg-muted/10">
                 <div className="px-3 pt-3 pb-1 flex gap-1">
-                {mealPlan.days.map((d, idx) => (
-                  <button
-                    key={d.day}
-                    onClick={() => setSelectedDay(idx)}
-                    className={`flex-1 min-w-0 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 text-center ${
-                      idx === selectedDay
-                        ? "bg-primary text-primary-foreground shadow"
-                        : "bg-muted/50 text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {d.day_name.slice(0, 3)}
-                  </button>
-                ))}
+                  {mealPlan.days.map((d, idx) => (
+                    <button
+                      key={d.day}
+                      onClick={() => setSelectedDay(idx)}
+                      className={`flex-1 min-w-0 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 text-center ${idx === selectedDay
+                          ? "bg-primary text-primary-foreground shadow"
+                          : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                        }`}
+                    >
+                      {d.day_name.slice(0, 3)}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}

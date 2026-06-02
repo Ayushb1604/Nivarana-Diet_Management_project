@@ -35,6 +35,8 @@ import {
   Calendar,
   Brain,
   Loader2,
+  MessageCircle,
+  Reply,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -71,6 +73,7 @@ export default function WellnessProgress() {
   const baseline = checkins[0];
   const latest = checkins[checkins.length - 1];
   const hasComparison = checkins.length >= 2;
+  const reversedCheckins = [...checkins].reverse();
 
   // Build chart data: marker-by-marker comparison
   const comparisonData = markerKeys.map((k) => ({
@@ -431,7 +434,104 @@ export default function WellnessProgress() {
               </motion.div>
             )}
 
+            {/* Check-in History & Coach Feedback */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35 }}
+              className="mb-8"
+            >
+              <Card className="bg-card/60">
+                <CardHeader>
+                  <CardTitle className="font-serif text-2xl flex items-center gap-2">
+                    <MessageCircle className="w-6 h-6 text-primary" />
+                    Check-in History & Coach Feedback
+                  </CardTitle>
+                  <CardDescription>
+                    Review your past submissions and advice from your wellness coach
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {reversedCheckins.map((c) => {
+                    const hasReply = !!c.adminReply;
+                    return (
+                      <Card key={c.id} className={`overflow-hidden border-border/60 ${c.notes ? "ring-1 ring-amber-400/20" : ""} ${hasReply ? "ring-1 ring-blue-400/20" : ""}`}>
+                        <div className="p-4 sm:p-5 space-y-4">
+                          {/* Header of the check-in item */}
+                          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border/40">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                                Check-in #{c.checkinNumber}
+                              </span>
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${c.overallScore >= 32 ? "bg-emerald-500/10 text-emerald-600 border border-emerald-400/20" :
+                                  c.overallScore >= 24 ? "bg-amber-500/10 text-amber-600 border border-amber-400/20" :
+                                    "bg-destructive/10 text-destructive border border-destructive/20"
+                                }`}>
+                                Score: {c.overallScore}/40
+                              </span>
+                            </div>
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Calendar className="w-3.5 h-3.5" />
+                              {c.createdAt ? format(new Date(c.createdAt), "MMM d, yyyy") : "—"}
+                            </span>
+                          </div>
 
+                          {/* Detail markers grid */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                            {markerKeys.map((m) => (
+                              <div key={m} className="bg-muted/30 hover:bg-muted/50 transition-colors p-2 rounded-lg border border-border/20 flex flex-col">
+                                <span className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider truncate">
+                                  {wellnessMarkers[m].split(" & ")[0]}
+                                </span>
+                                <span className="text-sm font-bold text-foreground mt-0.5">
+                                  {c[m]} <span className="text-[10px] font-normal text-muted-foreground">/ 5</span>
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Notes & Reply column */}
+                          {(c.notes || hasReply) && (
+                            <div className="space-y-3 pt-2">
+                              {/* User notes */}
+                              {c.notes && (
+                                <div className="p-3.5 rounded-xl bg-amber-500/[0.03] border border-amber-500/10">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                                    📝 Your Note & Observations
+                                  </span>
+                                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed whitespace-pre-wrap">
+                                    {c.notes}
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Admin/Coach reply */}
+                              {hasReply && (
+                                <div className="p-3.5 rounded-xl bg-blue-500/[0.03] border border-blue-500/10">
+                                  <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 flex items-center gap-1">
+                                      <Reply className="w-3 h-3" /> Coach Feedback
+                                    </span>
+                                    {c.adminRepliedAt && (
+                                      <span className="text-[10px] text-blue-500/70">
+                                        {format(new Date(c.adminRepliedAt), "MMM d, yyyy")}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-foreground font-medium leading-relaxed whitespace-pre-wrap">
+                                    {c.adminReply}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            </motion.div>
           </>
         )}
       </main>

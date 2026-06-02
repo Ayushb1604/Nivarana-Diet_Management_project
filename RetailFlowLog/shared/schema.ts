@@ -96,6 +96,10 @@ export const wellnessCheckins = pgTable("wellness_checkins", {
   calmness: integer("calmness").notNull(),
   overallScore: integer("overall_score").notNull(),
   notes: text("notes"),
+  // Admin reply fields
+  adminReply: text("admin_reply"),
+  adminRepliedAt: timestamp("admin_replied_at"),
+  adminReplyRead: integer("admin_reply_read").default(0), // 0=unread, 1=read
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -137,6 +141,17 @@ export const messages = pgTable("messages", {
   role: text("role").notNull(), // 'user' | 'assistant'
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Platform Feedback
+export const feedbacks = pgTable("feedbacks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userName: varchar("user_name").notNull(),
+  userRole: varchar("user_role").notNull(),
+  rating: integer("rating").notNull(),
+  text: text("text").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Types
@@ -202,6 +217,14 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
   createdAt: true,
 });
+
+export type Feedback = typeof feedbacks.$inferSelect;
+export type InsertFeedback = typeof feedbacks.$inferInsert;
+export const insertFeedbackSchema = createInsertSchema(feedbacks).omit({
+  id: true,
+  createdAt: true,
+});
+
 
 // Dosha question type
 export interface DoshaQuestion {

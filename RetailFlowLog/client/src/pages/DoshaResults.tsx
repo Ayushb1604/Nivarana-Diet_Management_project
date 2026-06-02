@@ -7,12 +7,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { doshaDescriptions } from "@/lib/doshaQuestions";
 import type { DoshaAssessment } from "@shared/schema";
 import { motion } from "framer-motion";
-import { 
-  Leaf, 
-  Wind, 
-  Flame, 
-  Mountain, 
-  ArrowRight, 
+import {
+  Leaf,
+  Wind,
+  Flame,
+  Mountain,
+  ArrowRight,
   CheckCircle,
   Sparkles,
   Target,
@@ -35,7 +35,7 @@ const doshaGradients = {
 
 export default function DoshaResults() {
   const [, setLocation] = useLocation();
-  
+
   const { data: assessment, isLoading } = useQuery<DoshaAssessment>({
     queryKey: ["/api/dosha-assessment"],
   });
@@ -59,7 +59,7 @@ export default function DoshaResults() {
       setAiLoading(false);
     }
   };
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background p-4 flex items-center justify-center">
@@ -76,7 +76,7 @@ export default function DoshaResults() {
       </div>
     );
   }
-  
+
   if (!assessment) {
     return (
       <div className="min-h-screen bg-background p-4 flex items-center justify-center">
@@ -97,13 +97,13 @@ export default function DoshaResults() {
       </div>
     );
   }
-  
+
   const primaryDosha = assessment.primaryDosha as keyof typeof doshaDescriptions;
   const secondaryDosha = assessment.secondaryDosha as keyof typeof doshaDescriptions | null;
   const PrimaryIcon = doshaIcons[primaryDosha];
   const primaryInfo = doshaDescriptions[primaryDosha];
   const secondaryInfo = secondaryDosha ? doshaDescriptions[secondaryDosha] : null;
-  
+
   const constitutionName = assessment.constitutionType === 'single'
     ? primaryInfo.name
     : `${primaryInfo.name}-${secondaryInfo?.name}`;
@@ -124,7 +124,7 @@ export default function DoshaResults() {
           </div>
         </div>
       </header>
-      
+
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
         {/* Hero result card */}
         <Card className={`overflow-hidden bg-gradient-to-br ${doshaGradients[primaryDosha]} animate-fade-in-up`}>
@@ -133,7 +133,7 @@ export default function DoshaResults() {
               <Sparkles className="w-4 h-4" />
               Your Constitution Type
             </div>
-            
+
             {/* Dosha visualization */}
             <div className="flex items-center justify-center gap-4 mb-6">
               <div className={`w-20 h-20 rounded-full bg-${primaryDosha}/20 flex items-center justify-center border-4 border-${primaryDosha}/40`}>
@@ -151,14 +151,14 @@ export default function DoshaResults() {
                 </>
               )}
             </div>
-            
+
             <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-2">
               {constitutionName}
             </h1>
             <p className="text-lg text-muted-foreground mb-6">
               {assessment.constitutionType === 'single' ? 'Single Dosha Constitution' : 'Dual Dosha Constitution'}
             </p>
-            
+
             {/* Visual representation (no percentages shown as per requirement) */}
             <div className="flex justify-center gap-6 max-w-sm mx-auto">
               <div className="flex flex-col items-center">
@@ -167,7 +167,7 @@ export default function DoshaResults() {
                 </div>
                 <div className="text-sm font-medium">Vata</div>
                 <div className="w-16 h-2 bg-muted rounded-full mt-1 overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-vata rounded-full transition-all duration-1000"
                     style={{ width: `${assessment.vataPercent}%` }}
                   />
@@ -179,7 +179,7 @@ export default function DoshaResults() {
                 </div>
                 <div className="text-sm font-medium">Pitta</div>
                 <div className="w-16 h-2 bg-muted rounded-full mt-1 overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-pitta rounded-full transition-all duration-1000"
                     style={{ width: `${assessment.pittaPercent}%` }}
                   />
@@ -191,7 +191,7 @@ export default function DoshaResults() {
                 </div>
                 <div className="text-sm font-medium">Kapha</div>
                 <div className="w-16 h-2 bg-muted rounded-full mt-1 overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-kapha rounded-full transition-all duration-1000"
                     style={{ width: `${assessment.kaphaPercent}%` }}
                   />
@@ -200,7 +200,7 @@ export default function DoshaResults() {
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Primary Dosha Details */}
         <Card className="animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
           <CardHeader>
@@ -216,7 +216,7 @@ export default function DoshaResults() {
           </CardHeader>
           <CardContent className="space-y-6">
             <p className="text-muted-foreground">{primaryInfo.description}</p>
-            
+
             <div>
               <h4 className="font-medium mb-3 flex items-center gap-2">
                 <Target className="w-4 h-4 text-primary" />
@@ -231,7 +231,7 @@ export default function DoshaResults() {
                 ))}
               </ul>
             </div>
-            
+
             <div>
               <h4 className="font-medium mb-3 flex items-center gap-2">
                 <Scale className="w-4 h-4 text-primary" />
@@ -246,10 +246,10 @@ export default function DoshaResults() {
                 ))}
               </ul>
             </div>
-            
+
             <div className="flex flex-wrap gap-2">
               {primaryInfo.qualities.map((quality) => (
-                <span 
+                <span
                   key={quality}
                   className={`px-3 py-1 rounded-full text-sm bg-${primaryDosha}/10 text-${primaryDosha}-foreground`}
                 >
@@ -327,7 +327,7 @@ export default function DoshaResults() {
             </CardContent>
           </Card>
         </motion.div>
-        
+
         {/* Secondary Dosha Details (if dual) */}
         {secondaryDosha && secondaryInfo && (
           <Card className="animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
@@ -350,7 +350,7 @@ export default function DoshaResults() {
             </CardContent>
           </Card>
         )}
-        
+
         {/* Call to Action */}
         <Card className="bg-primary/5 border-primary/20 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
           <CardContent className="p-6">
@@ -360,7 +360,7 @@ export default function DoshaResults() {
             <p className="text-muted-foreground mb-6">
               Choose how you'd like to receive your food recommendations
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/foods?mode=balanced" className="flex-1">
                 <Button className="w-full gap-2" size="lg" data-testid="button-balanced-diet">
